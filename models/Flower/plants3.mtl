@@ -1,0 +1,52 @@
+# Materials for file plants3.obj
+# Created by PlantStudio http://www.kurtz-fernhout.com
+# These files must be in the same directory for the materials to be read correctly.
+newmtl 1Lacypla_Intrnd
+Ka  0.1333 0.2509 0.0
+Kd  0.1333 0.2509 0.0
+Ks  0.1333 0.2509 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Intrnd
+Ka  0.1333 0.2509 0.0
+Kd  0.1333 0.2509 0.0
+Ks  0.1333 0.2509 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Petiole
+Ka  0.0 0.1254 0.0
+Kd  0.0 0.1254 0.0
+Ks  0.0 0.1254 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Petiole
+Ka  0.0 0.1254 0.0
+Kd  0.0 0.1254 0.0
+Ks  0.0 0.1254 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Leaf
+Ka  0.0 0.3764 0.0
+Kd  0.0 0.3764 0.0
+Ks  0.0 0.3764 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Leaf
+Ka  0.0 0.3764 0.0
+Kd  0.0 0.3764 0.0
+Ks  0.0 0.3764 0.0
+d 1.0
+illum 1
+
+newmtl 1Lacypla_Mrstm
+Ka  0.8588 0.02352 0.2078
+Kd  0.8588 0.02352 0.2078
+Ks  0.8588 0.02352 0.2078
+d 1.0
+illum 1
+

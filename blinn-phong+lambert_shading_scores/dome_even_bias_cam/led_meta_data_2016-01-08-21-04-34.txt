@@ -1,0 +1,19 @@
+Logged led scores to file: ../led_scores_2016-01-08-21-04-34.csv
+Logged meta data to file: ../led_meta_data_2016-01-08-21-04-34.txt
+Target Shape: Dome
+Reflection Score: 141477.47783
+Triangle Hit Qty Score: 43300
+Triangle Coverage Error Score: 0
+Quantity of LEDs for Coverage Error: 42
+Time taken: 70.84 seconds
+Quantity of LEDs: 92
+Quantity of Tris: 180
+Quantity of Cameras: 6
+Camera position description: Even bias. 6 cameras. 4 on equator 90 degrees apart. 2 at the poles.
+Camera positions: (0, 0, 9.5)
+Quantity of Target Rotations: 6
+Target Shape axis rotation: (0, 1, 0), 60.0 degrees
+Shading Diffuse: Lambertian cosine
+Shading Specular: Blinn-Phong with material shininess exponent: 1
+Light RGBA Channel(s): A single channel without multiplier is used, equivalent to RGBA(1,0,0,1)
+Material RGBA Channel(s): A single channel without multiplier is used, equivalent to RGBA(1,0,0,1)

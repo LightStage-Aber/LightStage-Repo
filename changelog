@@ -1,0 +1,110 @@
+
+
+LightStage_IlluminationOfTargetObject v0.1.0 -- 2016/01/11
+----------------------------------------------------------
+== Prerequisites 
+    -- python2.7.x (5), openGL, openGL-GLUT and numpy:
+    sudo apt-get install python2.7 python-opengl numpy
+
+== USAGE: 'python prototype_led_scoring.py -h' to see help options.
+   -- Select between program modes (-m) Display Mode (1) and Evaluation Mode (2)
+   -- Other options enable customisable target model (-p/-t/-s) in simple '.obj' data format, camera layout positions (-c), desired LED quantity (-l).
+
+== Display Mode (Default):
+    - By default, we load a mini-dome and LED positions from a result data file '../led_scores.csv'.
+    - In Display Mode, press F1 to view the runtime config options, such as key/mouse controls.
+        - 'l' to load a new result data file.
+        - 'r' to change between the data file's LED scoring measures.
+            - (1) ranked maximised intensity. LEDs are selected during Display Mode runtime, based on rank. 
+                  Use +/- to change the quantity of ranked LEDs displayed.
+            - (2) minimised coverage error, default of 42 LEDs is set. 
+                  LEDs displayed under this scoring have been selected during the Evaluation Mode run.
+
+== Evaluation Mode
+    - This mode will evaluate and log results to file evaluating ray reflection intensities into the observing cameras.
+    - For a simple target model with 180 triangle it can take 5-10 minutes to evaluate.
+    - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt' 
+    - The evalution depends on:
+        - camera positions
+        - 6 rotations of the target model within the LightStage.
+        - LED and quantity of LEDs desired
+        - target model, positioning (scale and translation inside dome)
+    - *We recommended that the camera layout and model positioning be set and previewed in the Display Mode before running in Evaluation Mode.*
+    - The evaluation measures:
+        - the light intensity score measure, uses Lambertian and Blinn-Phong reflection models to accumulate diffuse and specular 
+          reflection intensities per tri, per LED.
+        - the coverage error scoring measure, minimises the quantity of unlit target model triangle surfaces. This is done by 
+          prioritising LEDs that are alone in lighting a tri surface, followed by prioritising LEDs that have a high 
+          AccumIntensity * QtyTriHit score. With a limited search step and search depth, the best scoring set of LEDs are recorded, 
+          of quantity (-l). 
+          + AccumIntensity is the reflection intensity score per LED per tri of the target model, accumulated over the quantity of target model rotations.
+          + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
+        
+        
+    
+== Example Usage:
+-----------------
+    python prototype_led_scoring.py -h
+        Displays options on command line.
+
+    python prototype_led_scoring.py
+        Run in display mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -s 2 -t '(1,0,0)' -c 2
+        Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -p "../../dome_c.obj" -s 2 -t '(0,0,0)' -l 41
+        Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+        Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
+        Loaded result data file: ../led_scores.csv
+
+
+    python prototype_led_scoring.py -m 2 
+        Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
+        This took 75 seconds.
+        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
+        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
+
+    python prototype_led_scoring.py -m 2 -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+        Run in evaluation mode (-m), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
+        This took 83 minutes to run. Default is 'realistic bias' camera layout (-c), with 42 LEDs required (-l).
+        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
+        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+LightProjection_on_Object v0.0.2 -- 2015/10/17
+- Translated 'dome_c.obj' blender dome object into python functions to get dome vertices and edges/ faces. These vertices will be the LED light source vertices.
+        @see dome_obj_data.py
+- Calculated and drew lines to represent angles of incidence (from LED vertices) to a sample triangle face. This required functions to calculate the normalised perpendicular vector, the surface normal.
+- Added a console printed boolean quantity measure of illumination. 1, if the projected LED angle of incidence is against the front face of the surface, else 0.
+- Added 1 camera for future measure considering reflection angle into the camera.
+
+
+
+LightProjection_on_Object v0.0.1 -- 2015/10/08
+- Adapted a sample Py-OpenGL tutorial script to handle display loop, scene lighting and viewport manipulation via keyboard inputs, etc. 
+        @see show_sample_reflection_opengl.py
+- The handler module calls another module to manage drawing of specific objects in the scene and the model calculations. 
+        @see draw_calc_lighting.py
+
+
+To start with we'll use python 2.7 and opengl.
+        sudo apt-get install python2.7 python-opengl numpy
+
