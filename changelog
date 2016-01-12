@@ -1,16 +1,71 @@
 
 
-LightStage_IlluminationOfTargetObject v0.1.0 -- 2016/01/11
+LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
 ----------------------------------------------------------
-== Prerequisites 
-    -- python2.7.x (5), openGL, openGL-GLUT and numpy:
-    sudo apt-get install python2.7 python-opengl numpy
+== PREREQUISITES
+------------------
+    Python2.7.x (5)
+    PyOpenGL
+    numpy
+    
+    To install PyOpenGL on Windows:
+        First download:         PyOpenGL version '3.1.1b1-cp27' as x64 or x86 from http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
+        Then install as:        pip install path/to/download/PyOpenGL-3.1.1b1-cp27-none-win_XXXXX.whl
 
-== USAGE: 'python prototype_led_scoring.py -h' to see help options.
-   -- Select between program modes (-m) Display Mode (1) and Evaluation Mode (2)
-   -- Other options enable customisable target model (-p/-t/-s) in simple '.obj' data format, camera layout positions (-c), desired LED quantity (-l).
+    To install PyOpenGL on Linux (Ubuntu/ Debian):
+        sudo apt-get install python2.7 python-opengl numpy
+
+
+== USAGE SUMMARY: 
+-------------------
+    'python prototype_led_scoring.py -h' to see help options.
+    -- Select between program modes (-m) Display Mode (1) and Evaluation Mode (2)
+    -- Other options enable customisable target model (-p/-t/-s) in simple '.obj' data format, camera layout positions (-c), desired LED quantity (-l).
+
+
+== USAGE EXAMPLES:
+-------------------
+    python prototype_led_scoring.py -h
+        Displays options on command line.
+
+    python prototype_led_scoring.py
+        Run in display mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -s 2 -t '(1,0,0)' -c 2
+        Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -p "../../dome_c.obj" -s 2 -t '(0,0,0)' -l 41
+        Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+        Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
+        Loaded result data file: ../led_scores.csv
+
+    python prototype_led_scoring.py -m 2 
+        Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
+        This took 75 seconds.
+        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
+        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
+
+    python prototype_led_scoring.py -m 2 -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+        Run in evaluation mode (-m), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
+        This took 83 minutes to run. Default is 'realistic bias' camera layout (-c), with 42 LEDs required (-l).
+        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
+        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
+    
+
+
+== WHAT CAN THIS PROGRAM DO?:
+------------------------------
+    It can (1) EVALUATE the illumination of a simulated object inside a LightStageV3 and (2) DISPLAY the resulting
+    configuration(s) of LEDs to produce the best illumination of that object. These evaluations are based on two metrics 
+    that use the Lambertian diffuse and Blinn-Phong specular reflectance models.
 
 == Display Mode (Default):
+    - Command line option (-m 1).
     - By default, we load a mini-dome and LED positions from a result data file '../led_scores.csv'.
     - In Display Mode, press F1 to view the runtime config options, such as key/mouse controls.
         - 'l' to load a new result data file.
@@ -21,6 +76,7 @@ LightStage_IlluminationOfTargetObject v0.1.0 -- 2016/01/11
                   LEDs displayed under this scoring have been selected during the Evaluation Mode run.
 
 == Evaluation Mode
+    - Command line option (-m 2).
     - This mode will evaluate and log results to file evaluating ray reflection intensities into the observing cameras.
     - For a simple target model with 180 triangle it can take 5-10 minutes to evaluate.
     - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt' 
@@ -42,41 +98,6 @@ LightStage_IlluminationOfTargetObject v0.1.0 -- 2016/01/11
         
         
     
-== Example Usage:
------------------
-    python prototype_led_scoring.py -h
-        Displays options on command line.
-
-    python prototype_led_scoring.py
-        Run in display mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
-        Loaded result data file: ../led_scores.csv
-
-    python prototype_led_scoring.py -s 2 -t '(1,0,0)' -c 2
-        Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
-        Loaded result data file: ../led_scores.csv
-
-    python prototype_led_scoring.py -p "../../dome_c.obj" -s 2 -t '(0,0,0)' -l 41
-        Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
-        Loaded result data file: ../led_scores.csv
-
-    python prototype_led_scoring.py -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
-        Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
-        Loaded result data file: ../led_scores.csv
-
-
-    python prototype_led_scoring.py -m 2 
-        Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
-        This took 75 seconds.
-        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
-        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
-
-    python prototype_led_scoring.py -m 2 -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
-        Run in evaluation mode (-m), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
-        This took 83 minutes to run. Default is 'realistic bias' camera layout (-c), with 42 LEDs required (-l).
-        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
-        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
-    
-
     
     
     
