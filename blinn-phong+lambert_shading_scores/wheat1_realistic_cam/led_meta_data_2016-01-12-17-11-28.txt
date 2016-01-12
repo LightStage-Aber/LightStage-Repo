@@ -1,0 +1,21 @@
+Logged led scores to file: ../led_scores_2016-01-12-17-11-28.csv
+Logged meta data to file: ../led_meta_data_2016-01-12-17-11-28.txt
+Target Model: wheat1.obj
+Target Scaling Factor: 1.0
+Target Translation: (0, 0, 0)
+Reflection Score: 11282886.4295
+Triangle Hit Qty Score: 3293368
+Triangle Coverage Error Score: 0
+Quantity of LEDs for Coverage Error: 42
+Time taken: 11470.43 seconds
+Quantity of LEDs: 92
+Quantity of Tris: 11566
+Quantity of Cameras: 6
+Camera position description: Realistic bias. 6 cameras. 3 on equator 90 degrees apart. 2 at the front offset by 5 degrees. 1 top-down.
+Camera positions: (0, 0, 9.5)
+Quantity of Target Rotations: 6
+Target Axis Rotation: (0, 1, 0), 60.0 degrees
+Shading Diffuse: Lambertian cosine
+Shading Specular: Blinn-Phong with material shininess exponent: 1
+Light RGBA Channel(s): A single channel without multiplier is used, equivalent to RGBA(1,0,0,1)
+Material RGBA Channel(s): A single channel without multiplier is used, equivalent to RGBA(1,0,0,1)

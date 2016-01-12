@@ -1,0 +1,19 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v3.1.187496374)
+
+newmtl leaves2
+Kd 0.917647 0.776471 0.576471
+Ka 0.917647 0.776471 0.576471
+Ks 0.898039 0.898039 0.898039
+Ke 0 0 0
+d 1
+illum 1
+
+newmtl wheat
+Kd 0.929412 0.866667 0.52549
+Ka 0.929412 0.866667 0.52549
+Ks 0.898039 0.898039 0.898039
+Ke 0 0 0
+d 1
+illum 1
+
