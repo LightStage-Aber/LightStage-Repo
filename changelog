@@ -35,11 +35,11 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
         Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
         Loaded result data file: ../led_scores.csv
 
-    python run.py -p "../../dome_c.obj" -s 2 -t '(0,0,0)' -l 41
+    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41
         Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
         Loaded result data file: ../led_scores.csv
 
-    python run.py -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
         Loaded result data file: ../led_scores.csv
 
@@ -49,7 +49,7 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
         Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
         Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
 
-    python run.py -m 2 -p "../../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+    python run.py -m 2 -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
         Run in evaluation mode (-m), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
         This took 83 minutes to run. Default is 'realistic bias' camera layout (-c), with 42 LEDs required (-l).
         Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
@@ -109,8 +109,30 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
               + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
             
             
-        
-        
+
+== USAGE OPTIONS:
+-------------------        
+    Usage: run.py [options]
+    
+    Options:
+      -h, --help            show this help message and exit
+      -m NUM, --mode=NUM    Specify the tool mode. 1=Display mode (default).
+                            2=Evaluation mode.
+      -p PATH, --target-path=PATH
+                            Specify the path to an .obj file of the target model.
+                            For example: '../dome_c.obj'. Default is a mini-dome.
+      -s SCALE, --target-scale=SCALE
+                            Specify the target model scaling factor. - Default=1.0
+      -t (x,y,z), --target-translation=(x,y,z)
+                            Specify the target model translation. i.e. move -1 on
+                            Y-axis: '(0,-1,0)'
+      -c NUM, --camera-layout=NUM
+                            Specify the camera layout. 1=Realistic bias (default).
+                            2=Even bias.
+      -l NUM, --qty-leds=NUM
+                            Specify the number of LEDs in range(0-92). Default is
+                            42. *Note: Currently not loaded from data file.*
+
         
     
     
