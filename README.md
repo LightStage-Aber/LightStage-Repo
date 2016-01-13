@@ -26,15 +26,15 @@
     python run.py
         Run in display mode, with default mini-dome, default camera layout and default required LEDs.
 
-    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)' -r '../blinn-phong+lambert_shading_scores/wheat1_realistic_cam/led_scores_2016-01-12-17-11-28.csv'
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
-        Loaded result data file: ../led_scores.csv
+        Loads result data file (-r) for the wheat1 model: ../blinn-phong+lambert_shading_scores/wheat1_realistic_cam/led_scores_2016-01-12-17-11-28.csv
 
     python run.py -m 2 
         Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
         This takes ~75 seconds to run.
-        Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
-        Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
+        Creates information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
+        Creates result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
 
     python run.py -h
         Display options on command line.

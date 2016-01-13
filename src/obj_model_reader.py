@@ -16,15 +16,21 @@ def get_all_object_triangles( filename, scale ):
 
     r = []
     j = 0
+    
+    # Validation:
+    vertices, faces = [],[]
+    for obj in range(len(vertexObjs)):
+        vertices += vertexObjs[obj]
+        faces    += faceObjs[obj]
+    max_vertex_index = max([max(x) for x in faces])
+    if len(vertices) != max_vertex_index:
+        print "ParseWarning: A face's vertex index number is does not match the quantity of read vertices."
+        print "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index)
+            
+    # Parse as Tris:
     for obj in range(len(vertexObjs)):
         vertices = vertexObjs[obj]
         faces    = faceObjs[obj]
-        max_vertex_index = max([max(x) for x in faces])
-        if len(vertices) != max_vertex_index:
-            print "ParseError: A face's vertex index number is does not match (e.g. is greater than) the quantity of read vertices."
-            print "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index)
-            raise ParseError 
-            
         r.append([])
         c = 0
         for f in faces:     # for every face
@@ -106,12 +112,12 @@ def read_faces_objects( filename ):
                         values   = list(line.split())           # split to list
                         values   = values[1:]                   # get only values
                         for x in values:
+                            # Formatting note: f  1//1 2//2 3//3    -- position vertex/texture coordinate/normal vertex
                             x = x.split("/")
-                            if len(x) >1:
-                                if x[0] != x[1] and x[0] != x[2]:
-                                    print "An .obj file face contained a point with unmatched values in "+str(x)
-                                    print "Line "+str(count)+":\n"+str(line)
-                                    raise ValueError
+                            if len(x) < 1:
+                                print "An .obj file face entry exists without a position-vertex point, expected format: 'position-vertex/texture-coordinate/normal-vertex'"
+                                print "Line "+str(count)+":\n"+str(line)
+                                raise ValueError
                         values   = [int(x.split("/")[0]) for x in values]     # cast from string to int (index)
                         object_faces[len(object_faces)-1].append( values )
                 prev_line = line
@@ -141,13 +147,16 @@ def test(filename, expected={"v":0,"f":0,"tri":0}):
     
     
 if __name__ == "__main__":
-    house_plant = "../../models/house plant 2/house plant.obj"
-    plants3 = "../../models/Flower/plants3.obj"
+    #house_plant = "../../models/house plant 2/house plant.obj"
+    plants3 = "../models/Flower/plants3.obj"
+    dome    = "../models/dome_c.obj"
+    wheat   = "../models/wheat/wheat1.obj"
     
-    if test(plants3, expected={"v":381,"f":381,"tri":12290}):
-        print ("Passed:", plants3)
-    
-#    if test(house_plant, expected={"v":3,"f":3,"tri":12290}):
-#        print ("Passed:", house_plant)
+#    if test(plants3, expected={"v":381,"f":381,"tri":12290}):
+#        print ("Passed:", plants3)
+#    if test(dome, expected={"v":1,"f":1,"tri":180}):
+#        print ("Passed:", dome)
+    if test(wheat, expected={"v":1,"f":2,"tri":11566}):
+        print ("Passed:", wheat)
     
     

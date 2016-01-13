@@ -40,7 +40,11 @@ parser.add_option("-c", "--camera-layout",
 parser.add_option("-l", "--qty-leds",
                   action="store", dest="LEDS_QTY", default=42, metavar='NUM', type=int,
                   help="Specify the number of LEDs in range(0-92). Default is 42. *Note: Currently not loaded from data file.*")
+parser.add_option("-r", "--load-result-file",
+                  action="store", dest="LED_SCORE_LOG_FILE", default=None, metavar='PATH', type=str,
+                  help="Specify the path to an LED score result data file. For example: '../led_scores_xxx.csv'. ")
 options,args = parser.parse_args()
+
 
 
 # Program's Config
@@ -93,7 +97,7 @@ cameraPos = (0,0,scale+1.5)
 
 log_score            = file_io.file_writer(path="../",filename="led_scores_"+time.strftime("%Y-%m-%d-%H-%M-%S")+".csv") if not SELECT_BEST_LEDS else None
 log_meta_data        = file_io.file_writer(path="../",filename="led_meta_data_"+time.strftime("%Y-%m-%d-%H-%M-%S")+".txt") if not SELECT_BEST_LEDS else None
-LED_SCORE_LOG_FILE   = "../led_scores.csv"
+LED_SCORE_LOG_FILE   = options.LED_SCORE_LOG_FILE if options.LED_SCORE_LOG_FILE != None and os.path.exists(options.LED_SCORE_LOG_FILE) else ""
 logged_score_to_file = False
 loggable             = []
 DATA_HEADER          = ["led_num","reflection_score","tri_hit_score"]
@@ -368,13 +372,19 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
             TARGET_ROTATIONS    = 1                             # Remove rotations.
             triangles           = TARGET_TRIANGLES[:10]
             shape_name          = "Test Tri"
-            
+        
         reflection_score = 0
         triangleHit_score = 0
         for led_num in range(len(leds)):
             led_score = 0                               # The accumulated scaled reflection-angle-to-each-camera-from-specular-angle score.
             led_tri_hit_score = 0                       # The number of tris the led has hit.
             led = leds[led_num]
+            
+            
+            if DO_EVALUATIONS:
+                progress_complete   = str(round((led_num+1)*(100.0/len(leds)),0))
+                progress_time       = str(round(((currentMillis()-startTime)/1000.0)/60,2))
+                print(progress_complete+"% at "+progress_time+" mins")
             
             for rotation_num in range(TARGET_ROTATIONS):  
                 if DO_EVALUATIONS:
@@ -411,6 +421,7 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
                                     drawTextString.append("Camera "+str(cam_num)+": "+str(round(d,2))+"d;    "+str(round(blinn_spec,2))+" + "+str(round(lamb_diffuse,2))+" = "+str(round(this_led_score,2)) )
 
                         led_tri_hit_score +=1
+
             if DO_EVALUATIONS:
                 if not logged_score_to_file:
                     loggable.append( [led_num, led_score, led_tri_hit_score] )

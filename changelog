@@ -15,6 +15,9 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
     To install PyOpenGL on Linux (Ubuntu/ Debian):
         sudo apt-get install python2.7 python-opengl numpy
 
+    Note the 'pip' and 'easy_install' Python packages for PyOpenGL are incompatible with this project code, as tested on Windows and Ubuntu.
+    
+    
 == FILES:
 -----------
     /src                                    - Code.
@@ -29,23 +32,21 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
 
     python run.py
         Run in display mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
-        Loaded result data file: ../led_scores.csv
 
     python run.py -s 2 -t '(1,0,0)' -c 2
         Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
-        Loaded result data file: ../led_scores.csv
 
-    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41
+    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
         Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
-        Loaded result data file: ../led_scores.csv
+        Loads result data file (-r) for the dome model: ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
 
-    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)' -r ../blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
-        Loaded result data file: ../led_scores.csv
+        Loads result data file (-r) for the plant3 model: ../blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
 
     python run.py -m 2 
         Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
-        This took 75 seconds.
+        This took 75 seconds, during testing.
         Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
         Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
 
@@ -132,6 +133,9 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
       -l NUM, --qty-leds=NUM
                             Specify the number of LEDs in range(0-92). Default is
                             42. *Note: Currently not loaded from data file.*
+      -r PATH, --load-result-file=PATH
+                            Specify the path to an LED score result data file. For
+                            example: '../led_scores_xxx.csv'.
 
         
     
