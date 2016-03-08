@@ -24,7 +24,7 @@ import key_events
 parser = OptionParser()
 parser.add_option("-m", "--mode",
                   action="store", dest="EVALUATION", default=1, metavar='NUM', type=int,
-                  help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode.")
+                  help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode.")                  
 parser.add_option("-p", "--target-path",
                   action="store", dest="TARGET_SHAPE", default=None, metavar='PATH', type=str,
                   help="Specify the path to an .obj file of the target model. For example: '../dome_c.obj'. Default is a mini-dome.")
@@ -39,13 +39,15 @@ parser.add_option("-c", "--camera-layout",
                   help="Specify the camera layout. 1=Realistic bias (default). 2=Even bias.")
 parser.add_option("-l", "--qty-leds",
                   action="store", dest="LEDS_QTY", default=42, metavar='NUM', type=int,
-                  help="Specify the number of LEDs in range(0-92). Default is 42. *Note: Currently not loaded from data file.*")
+                  help="Specify the number of LEDs in range(0-92). Default is 42. *Note: This value is not currently recalled from any results files.*")
 parser.add_option("-r", "--load-result-file",
                   action="store", dest="LED_SCORE_LOG_FILE", default=None, metavar='PATH', type=str,
                   help="Specify the path to an LED score result data file. For example: '../led_scores_xxx.csv'. ")
+parser.add_option("-k", "--reflectance-score",
+                  action="store", dest="DIFFUSE_REFLECTANCE_ONLY", default=1, metavar='NUM', type=int,
+                  help="Specify the reflectance model scorings in evaluation mode. 1=Lambert's diffuse and Blinn-Phong's specular (default). 2=Lambert's diffuse only.")
 options,args = parser.parse_args()
-
-
+PARSE_OPTIONS = options
 
 # Program's Config
 SELECT_BEST_LEDS            = True if options.EVALUATION == 1 else False
@@ -61,7 +63,7 @@ USE_SHADING_SCORE       = True
 USE_COVERAGE_SCORE      = not USE_SHADING_SCORE
 SCORE_DESCRIPTION       = "Intensity Score" if USE_SHADING_SCORE else "Coverage Error"
 CSV_METRIC_COLUMN_INDEX = 1 if USE_SHADING_SCORE else 3
-
+DIFFUSE_REFLECTANCE_ONLY= True if options.DIFFUSE_REFLECTANCE_ONLY == 1 else False
 
 
 # Camera Configuration:
@@ -167,8 +169,8 @@ def toggle_help():
     
 def toggle_reflection_score():
     global USE_SHADING_SCORE, USE_COVERAGE_SCORE, SCORE_DESCRIPTION, CSV_METRIC_COLUMN_INDEX, BEST_LEDS, QTY_OF_BEST_LEDS_REQUIRED
-    USE_SHADING_SCORE       = not USE_SHADING_SCORE   
-    USE_COVERAGE_SCORE      = not USE_SHADING_SCORE
+    USE_SHADING_SCORE       = not USE_SHADING_SCORE   	# T -> F
+    USE_COVERAGE_SCORE      = not USE_SHADING_SCORE		# F -> not F -> T
     SCORE_DESCRIPTION       = "Shading Score" if USE_SHADING_SCORE else "Coverage Error"
     CSV_METRIC_COLUMN_INDEX = 1 if USE_SHADING_SCORE else 3
     BEST_LEDS               = None
@@ -410,8 +412,9 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
                                 
                                 blinn_spec           = reflect_models.BlinnPhong_specular(incident_vector=l, view_vector=view, surface_norm=n1, shininess_exponent=MAT_SHININESS)
                                 lamb_diffuse         = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1 )
-                                
-                                this_led_score       = lamb_diffuse + blinn_spec
+
+                                #this_led_score       = lamb_diffuse + blinn_spec
+                                this_led_score       = get_reflectance_score( lamb_diffuse , blinn_spec )
                                 led_score           += this_led_score
                                 
                                 if DO_EVALUATIONS:
@@ -472,6 +475,7 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
                 string.append( SPECULAR_SHADING_DESCRIPTION )
                 string.append( SHADING_LIGHT_DESCRIPTION    )
                 string.append( SHADING_MATERIAL_DESCRIPTION )
+                string.append( "Command line arguments: "+str(PARSE_OPTIONS) )
                 
                 log_score.write_to_csv_rows( loggable )
                 log_meta_data.write_to_file_list(string, append_newline=True)
@@ -490,8 +494,8 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
                 draw_text(drawTextString[i],20,20+(i*15))
         
 
-
-
+def get_reflectance_score( lamb_diffuse , blinn_spec ):
+	return lamb_diffuse if DIFFUSE_REFLECTANCE_ONLY else lamb_diffuse + blinn_spec
 
 
 
