@@ -9,6 +9,10 @@
     - These evaluations are based on two metrics that use the Lambertian diffuse and Blinn-Phong specular reflectance models.
     
 
+#### DEMO VIDEO of LIGHTSTAGE SIMULATION
+[![Video: LightStage Simulation with Wheat Plant Model](https://pmdscully.files.wordpress.com/2016/01/wheat1_intensity_score_663.png)](http://www.youtube.com/watch?v=Jdfgg7R9Vds)
+
+
 #### PREREQUISITES
     Python2.7.x (5)
     PyOpenGL
