@@ -1,6 +1,6 @@
 
 
-LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
+LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
 ----------------------------------------------------------
 == PREREQUISITES
 ------------------
@@ -136,6 +136,10 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
       -r PATH, --load-result-file=PATH
                             Specify the path to an LED score result data file. For
                             example: '../led_scores_xxx.csv'.
+	  -k NUM, --reflectance-score=NUM
+		                    Specify the reflectance model scorings used in evaluation
+		                    mode. 1=Lambert's diffuse and Blinn-Phong's specular
+		                    (default). 2=Lambert's diffuse only.
 
         
     
@@ -147,6 +151,13 @@ LightStage_IlluminationOfTargetObject v0.1.1 -- 2016/01/11
     
     
 -----------------------------------------------------------------------------------------------------------------------------------------------
+LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
+- Added Lambertian only reflectance scoring to evaluation mode. 
+	- Added -k command line option to use this. 
+- Included new result file for dome object model evaluation using Lambertian reflectance only.
+
+
+
 
 LightProjection_on_Object v0.0.2 -- 2015/10/17
 - Translated 'dome_c.obj' blender dome object into python functions to get dome vertices and edges/ faces. These vertices will be the LED light source vertices.

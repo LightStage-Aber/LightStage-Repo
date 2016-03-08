@@ -45,7 +45,7 @@ parser.add_option("-r", "--load-result-file",
                   help="Specify the path to an LED score result data file. For example: '../led_scores_xxx.csv'. ")
 parser.add_option("-k", "--reflectance-score",
                   action="store", dest="DIFFUSE_REFLECTANCE_ONLY", default=1, metavar='NUM', type=int,
-                  help="Specify the reflectance model scorings in evaluation mode. 1=Lambert's diffuse and Blinn-Phong's specular (default). 2=Lambert's diffuse only.")
+                  help="Specify the reflectance model scorings used in evaluation mode. 1=Lambert's diffuse and Blinn-Phong's specular (default). 2=Lambert's diffuse only.")
 options,args = parser.parse_args()
 PARSE_OPTIONS = options
 

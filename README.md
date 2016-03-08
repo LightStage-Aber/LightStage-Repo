@@ -50,3 +50,6 @@
     Use 'mouse' to drag and zoom view of object.
     Use 'space' to stop/start display rotation.
     
+    
+#### See Changelog for more detailed usage and information.
+
