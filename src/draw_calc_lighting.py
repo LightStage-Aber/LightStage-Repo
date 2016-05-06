@@ -5,6 +5,7 @@ from OpenGL.GLU import *
 import numpy as np
 import math, sys, time;     currentMillis = lambda: int(round(time.time() * 1000))
 from optparse import OptionParser
+import itertools
 
 import dome_obj_data
 import file_io
@@ -15,6 +16,7 @@ from updateable_line import Updateable_Line
 from vector_maths import *
 import analytical_reflection_models as reflect_models
 import key_events
+import stats_maths
 
 
 
@@ -24,7 +26,10 @@ import key_events
 parser = OptionParser()
 parser.add_option("-m", "--mode",
                   action="store", dest="EVALUATION", default=1, metavar='NUM', type=int,
-                  help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode.")                  
+                  help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode.")
+parser.add_option("-e", "--evaluation-metric-mode",
+                  action="store", dest="EVALUATION_METRIC_MODE", default=1, metavar='NUM', type=int,
+                  help="Specify the evaluation metric mode. 1=Use Reflectance Measures (default). 2=Use Illuminance Measure (Lambertian only).")
 parser.add_option("-p", "--target-path",
                   action="store", dest="TARGET_SHAPE", default=None, metavar='PATH', type=str,
                   help="Specify the path to an .obj file of the target model. For example: '../dome_c.obj'. Default is a mini-dome.")
@@ -50,12 +55,14 @@ options,args = parser.parse_args()
 PARSE_OPTIONS = options
 
 # Program's Config
-SELECT_BEST_LEDS            = True if options.EVALUATION == 1 else False
-QTY_OF_BEST_LEDS_REQUIRED   = options.LEDS_QTY;   default_QTY_OF_BEST_LEDS_REQUIRED = lambda: options.LEDS_QTY
-realistic_bias              = True if options.CAMERA_LAYOUT == 1 else False
-TARGET_SHAPE                = options.TARGET_SHAPE          #None
-TARGET_SCALE                = options.TARGET_SCALE          #0.01
-TARGET_TRANSLATION          = eval(options.TARGET_TRANSLATION)    #(0,-3,0)
+EVALUATION_MODE_REFLECTANCE  = options.EVALUATION_METRIC_MODE == 1
+EVALUATION_MODE_ILLUMINATION = options.EVALUATION_METRIC_MODE == 2
+SELECT_BEST_LEDS             = True if options.EVALUATION == 1 else False
+QTY_OF_BEST_LEDS_REQUIRED    = options.LEDS_QTY;   default_QTY_OF_BEST_LEDS_REQUIRED = lambda: options.LEDS_QTY
+realistic_bias               = True if options.CAMERA_LAYOUT == 1 else False
+TARGET_SHAPE                 = options.TARGET_SHAPE          #None
+TARGET_SCALE                 = options.TARGET_SCALE          #0.01
+TARGET_TRANSLATION           = eval(options.TARGET_TRANSLATION)    #(0,-3,0)
 
 
 # Display Configuration for Scoring
@@ -321,18 +328,23 @@ def get_best_score(best_LEDs):
     
 
 def draw( updateable_line ):
-        global cameraPos, scale
-        
-        draw_axes(8, 2)
-        if DRAW_GROUND:
-            draw_ground()
-        camerasVertices = draw_cameras( cameraPos )
-        triangles, shape_name = get_target_shape_triangles()
-        
-        if SELECT_BEST_LEDS:
-            draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name )
-        else:
-            draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_name )
+		global cameraPos, scale
+
+		draw_axes(8, 2)
+		if DRAW_GROUND:
+			draw_ground()
+		camerasVertices = draw_cameras( cameraPos )
+		triangles, shape_name = get_target_shape_triangles()
+		if SELECT_BEST_LEDS:
+			draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name )
+		else:
+			if EVALUATION_MODE_REFLECTANCE:
+				draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_name )
+			elif EVALUATION_MODE_ILLUMINATION:
+				evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name )
+			else:
+				print("Invalid evaluation mode selected. Check runtime argument -e (--evaluation-metric-mode).")
+				sys.exit()
             
 
 def draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name ):
@@ -496,6 +508,87 @@ def draw_and_evaluate_leds( updateable_line, camerasVertices, triangles, shape_n
 
 def get_reflectance_score( lamb_diffuse , blinn_spec ):
 	return lamb_diffuse if DIFFUSE_REFLECTANCE_ONLY else lamb_diffuse + blinn_spec
+
+
+# -----------------------------------------------------------
+
+
+def evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name ):
+    global cameraPos, scale, logged_score_to_file, loggable
+    
+    print "aaahhh"
+    sys.exit()
+    string = []        
+    drawTextString = []
+    l,r,d = 0,0,0
+    all_leds 		= draw_dome( scale , True )
+    num_of_leds 	= 42
+    led_sets 		= get_led_sets( all_leds, num_of_leds )
+    
+    startTime = currentMillis()
+    if not DO_EVALUATIONS:
+        leds                = [updateable_line.get_point()] # Use reflections from single light selected by arrow-keys.
+        triangles           = TARGET_TRIANGLES[:10]
+        shape_name          = "Test Tri"
+    	led_sets			= led_sets[0]
+    
+    # Note: One led hits 50% of surfaces.
+	surface_scores 	= []
+    for leds in led_sets:					# For all sets of LED positions with set magnitude 42.
+    	surfaces 	= [0] * len(triangles)
+    	
+    	for led in leds:					# For all 42 leds:
+			for tri_num in range(len(triangles)):
+				tri = triangles[tri_num]
+				make_triangle_face( tri )
+				c  = find_center_of_triangle( tri )
+				n1 = find_perpendicular_of_triangle( tri )              # Get normal of current tri plane.
+				l, r    = reflect_no_rotate( c, led, n1 )
+				""" usage of l and r require a prior-translate to c.
+				"""
+				if is_front_facing_reflection(tri, l, r):       #Also see: __debug_is_cullable_reflection(tri, OTri, l, r, c )
+                
+					draw_incident_ray(c, l)
+					draw_reflection_ray(c, r)
+					view = np.subtract(cam, c)    #reposition relative to center of incident surface.
+					lamb_diffuse        = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1 )
+
+					score 				= lamb_diffuse	# Get Lambertian intensity value (x1) per surface per led. --> [surface] = accumulated score.
+					surfaces[tri_num] 	+= score
+		#total_lambertian_score_for_this_led_set = sum(surfaces)
+		#difference_of_this_led_set				 = stdev(surfaces)
+    	surface_scores.append( surfaces )
+	
+	matrix 				= np.array( surface_scores )
+	(best, best_index) 	= stats_maths.find_least_squares_difference( matrix )
+	best_led_set 		= led_sets[best_index]
+	print("Best LED Set:", best_led_set)
+	print("Best LED Index:", best_index)
+	print("Best Value:", best)
+	sys.exit()
+	
+def get_led_sets( all_leds, num_of_leds ):
+	""" Select all sets of leds that have a size of 42.
+	"""
+	print("Get led sets: " + str((num_of_leds, all_leds)))
+	print
+	print sys.getsizeof( list(itertools.combinations(all_leds, num_of_leds)) )
+	sys.exit()
+	
+
+def get_lambert_intensity_score( led, tri ):
+	print("Get score: " + str(led, tri))
+	sys.exit()
+
+
+
+
+
+
+
+
+
+
 
 
 
