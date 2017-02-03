@@ -15,7 +15,7 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
     To install PyOpenGL on Linux (Ubuntu/ Debian):
         sudo apt-get install python2.7 python-opengl numpy
 
-    Note the 'pip' and 'easy_install' Python packages for PyOpenGL are incompatible with this project code, as tested on Windows and Ubuntu.
+    Note the 'pip' and 'easy_install' Python packages for PyOpenGL are incompatible with this project code, as tested on Windows 7 and Ubuntu 14.04 (2016/03/08).
     
     
 == FILES:
@@ -36,13 +36,13 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
     python run.py -s 2 -t '(1,0,0)' -c 2
         Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
 
-    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
+    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../results/blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
         Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
         Loads result data file (-r) for the dome model: ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
 
-    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)' -r ../blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
+    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)' -r ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
-        Loads result data file (-r) for the plant3 model: ../blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
+        Loads result data file (-r) for the plant3 model: ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
 
     python run.py -m 2 
         Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
@@ -119,6 +119,14 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
       -h, --help            show this help message and exit
       -m NUM, --mode=NUM    Specify the tool mode. 1=Display mode (default).
                             2=Evaluation mode.
+      -e NUM, --evaluation-metric-mode=NUM
+                            Specify the evaluation metric mode.'-e1' =Use
+                            Reflectance Measures (default).
+                            <NOT IMPLEMENTED> '-e2' =Use Illuminance
+                            Measure Search (Lambertian only). '-e3' =Use
+                            Illuminance Measure (Lambertian only); depends on
+                            loaded result file (-r) read from column index 3 with
+                            binary value 1.</NOT IMPLEMENTED>
       -p PATH, --target-path=PATH
                             Specify the path to an .obj file of the target model.
                             For example: '../dome_c.obj'. Default is a mini-dome.
@@ -131,25 +139,42 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
                             Specify the camera layout. 1=Realistic bias (default).
                             2=Even bias.
       -l NUM, --qty-leds=NUM
-                            Specify the number of LEDs in range(0-92). Default is
-                            42. *Note: Currently not loaded from data file.*
+                            Specify the number of LEDs to show in demo and to
+                            evaluate in range(0-92). Default is 44. *Note: This
+                            value is not currently recalled from any results
+                            files.*
       -r PATH, --load-result-file=PATH
                             Specify the path to an LED score result data file. For
                             example: '../led_scores_xxx.csv'.
-	  -k NUM, --reflectance-score=NUM
-		                    Specify the reflectance model scorings used in evaluation
-		                    mode. 1=Lambert's diffuse and Blinn-Phong's specular
-		                    (default). 2=Lambert's diffuse only.
+      -k NUM, --reflectance-score=NUM
+                            Specify the reflectance model scorings used in
+                            evaluation mode. 1=Lambert's diffuse only. 2=Lambert's
+                            diffuse and Blinn-Phong's specular (default).
+      -d NUM, --display-evaluation-metric=NUM
+                            Specify the evaluation metric display mode from result
+                            file. 1=Use Index Column 1 Scores (default). 2=Use
+                            Index Column 3 Scores (Lambertian only).
 
-        
     
     
     
+-----------------------------------------------------------------------------------------------------------------------------------------------
+LightStage_LightPositioning_EvaluationTool v0.1.4 -- 2017/02/03
+- Renamed.
+- Refactored code after new luminance metrics and search method implementations were trialed. These new method implementations are not made available in this release.
+- Coming up next: evaluate a loaded set of vertices. Map loaded set of vertices to possible frame mounting positions.
     
     
     
+-----------------------------------------------------------------------------------------------------------------------------------------------
+LightStage_IlluminationOfTargetObject v0.1.3 -- 2016/04/15
+- Add Lambertian illumination (incidence) scores.
+	- With a lambertian-like illuminance approach.
+    - Use a fragment shader scoring approach to measure the illumination. Use lambertian score (~cosine of incidence) score at each surface.
+    - Defaults to lambertian evaluations. See command line option (-k).
     
     
+
 -----------------------------------------------------------------------------------------------------------------------------------------------
 LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
 - Added Lambertian only reflectance scoring to evaluation mode. 
@@ -158,7 +183,7 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
 
 
 
-
+-----------------------------------------------------------------------------------------------------------------------------------------------
 LightProjection_on_Object v0.0.2 -- 2015/10/17
 - Translated 'dome_c.obj' blender dome object into python functions to get dome vertices and edges/ faces. These vertices will be the LED light source vertices.
         @see dome_obj_data.py

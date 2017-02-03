@@ -19,8 +19,8 @@ if str(OpenGL.__version__) not in EXPECTED_VERSION_OPENGL:
     print "Actual "+str(OpenGL.__version__)
 
 import draw_calc_lighting
-from updateable_line import Updateable_Line
-from key_events import key_events
+from model_helpers import Updateable_Line
+from options import Key_Events
 
 
 
@@ -39,7 +39,7 @@ default_x, default_z = 0, 0
 DIRECTION = 1
 lights  = [ (15, 15, 10), (-20.0, -20.0, 20.0), (0.0, -20.0, 0.0), (-20.0, 0.0, 0.0) ]
 updateable_line = Updateable_Line(8)
-key_events = key_events()
+keyEvents = Key_Events()
 
 
 
@@ -92,7 +92,7 @@ def keyPressed(*args):
         move_viewport   = [GLUT_KEY_UP,GLUT_KEY_DOWN, 'q','e','w','s','a','d']
         update_line     = ['y','h','u','j','i','k']
         
-        key_events.key_pressed( args[0] )
+        keyEvents.key_pressed( args[0] )
         
         s = ""
         if args[0] in [ESCAPE]:
@@ -217,7 +217,7 @@ def DrawGLScene():
         glRotatef(Y_AXIS,0.0,1.0,0.0)
         glRotatef(Z_AXIS,0.0,0.0,1.0)
         
-        draw_calc_lighting.update_configs_via_keypress(key_events)
+        draw_calc_lighting.update_configs_via_keypress(keyEvents)
         draw_calc_lighting.draw( updateable_line )
         
         

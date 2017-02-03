@@ -1,4 +1,5 @@
-import dome_obj_data
+from __future__ import division
+from data_3d import dome_obj_data
 
 class Updateable_Line:
     def __init__(self, scale=8):

@@ -1,7 +1,7 @@
 
 
 
-class key_events:
+class Key_Events:
     def __init__(self):
         self.key = ''
     def key_pressed(self, key):

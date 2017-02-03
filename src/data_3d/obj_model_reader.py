@@ -1,4 +1,6 @@
 import os,sys
+import numpy as np
+
 
 class ParseError(Exception): pass;
 class TestFailedError(Exception): pass;
@@ -122,6 +124,9 @@ def read_faces_objects( filename ):
                         object_faces[len(object_faces)-1].append( values )
                 prev_line = line
     return object_faces
+
+
+
 
 
 
