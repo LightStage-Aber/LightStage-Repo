@@ -1,9 +1,11 @@
 import os
 import csv
 
+
 def makeDirectory(directory):
         if not os.path.exists(directory) and directory != "":
                 os.makedirs(directory)
+
 
 def rename_file(old , new, overwrite=False):
         if os.path.exists(old):
@@ -11,23 +13,20 @@ def rename_file(old , new, overwrite=False):
                         os.rename(old, new)
                 else:
                         if os.path.exists(new):
-                                new = new+"~"
-                                print "Specified new filename already exists. Renamed and writing file with filename: "+new
+                                new += "~"
+                                print("Specified new filename already exists. Renamed and writing file with filename: "+new)
                         os.rename(old, new)
-                
-                
-                
-                
 
 
 def write_to_file(s, path, filename, append_newline=True):
         makeDirectory(path)
         f 		= open(path+filename,'a')
         if append_newline:
-                f.write( str(s) +"\n")
+                f.write( str(s) + "\n")
         else:   
                 f.write( str(s) )
         f.close()
+
 
 def write_to_file_list(strings, path, filename, append_newline=True):
         makeDirectory(path)
@@ -39,15 +38,24 @@ def write_to_file_list(strings, path, filename, append_newline=True):
                     f.write( str(s) )
         f.close()
 
-def write_to_csv(l, path, filename, asRows=False):
+
+
+def write_to_csv(l, path, filename, asRows=False, doAppend=True):
         makeDirectory(path)
-        f 		= open(path+filename,'a') 
-        wr              = csv.writer(f, dialect='excel')
-        if not asRows:
-                wr.writerow(l)
-        else:
-                wr.writerows(l)
-        f.close()
+        write_mode          = 'a' if doAppend else 'w'
+        with open(path+filename,write_mode) as f:
+            wr              = csv.writer(f, dialect='excel')
+            if not asRows:
+                    wr.writerow(l)
+            else:
+                    wr.writerows(l)
+
+def write_to_latex_table(rows, header, path, filename):
+        # pip install tabulate
+        from tabulate import tabulate
+        s = tabulate(rows, header, tablefmt="latex_booktabs")
+        s = s.replace("\\textbackslash{}","\\")
+        write_to_file(s, path, filename, append_newline=True)
 
 
 def read_in_csv_file_to_list_of_lists(filename, skip_header=False):
@@ -65,6 +73,7 @@ def read_in_csv_file_to_list_of_lists(filename, skip_header=False):
             l = list(reader)
         return l
 
+
 def read_in_csv_file_header_to_list(filename):
         """
         Read in csv file header only.
@@ -73,10 +82,19 @@ def read_in_csv_file_header_to_list(filename):
             reader = csv.reader(f)
             l = list(reader.next())
         return l
-	
-	
-	
-	
+
+
+def read_file_to_list(filename):
+        """
+        Read in file to list of strings
+        """
+        l = []
+        with open(filename, 'rb') as f:
+            for line in f:
+                l.append( line.strip() )
+        return l
+
+
 class file_writer:
         def __init__(self,path,filename,header=None):
                 self.filename   = filename

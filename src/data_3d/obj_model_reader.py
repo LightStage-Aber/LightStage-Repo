@@ -1,10 +1,11 @@
 import os,sys
 import numpy as np
+from shape_validator import *
 
 
 class ParseError(Exception): pass;
 class TestFailedError(Exception): pass;
-
+class FileNotFoundError(Exception): pass;
 
     
 def get_all_vertex_face_objects( filename ):
@@ -54,11 +55,23 @@ def get_all_object_triangles( filename, scale ):
     """
     return r
 
+def apply_scale( vertices, scale=1.0 ):
+    """ Apply scaling to the each vertex.
+    """
+    checkVerticesValidity( vertices )
+    if type(scale) != float:
+        raise ValueError
+    
+    for i in range(len(vertices)):
+        v = vertices[i]
+        tmpv = [v[0]*scale, v[1]*scale, v[2]*scale]
+        vertices[i] = tmpv
 
 def apply_translate( triangles, translate_tris=(0,0,0) ):
     """ Apply a translation to each triangle's points.
-        -- No validation checking.
     """
+    checkShapeValidity( triangles )
+    
     for i in range(len(triangles)):                 # each tri in triangles
         for j in range(len(triangles[i])):          # each point in a tri
             for k in range(len(translate_tris)):    # each axis in a point
@@ -88,6 +101,8 @@ def read_vertices_objects(filename):
                         values   = [float(x) for x in values]   # cast from string to float
                         object_vertices[len(object_vertices)-1].append( values )
                 prev_line = line
+    else:
+        raise FileNotFoundError("Obj file not found: "+str(filename))
     return object_vertices
 
 def read_faces_objects( filename ):
@@ -123,6 +138,8 @@ def read_faces_objects( filename ):
                         values   = [int(x.split("/")[0]) for x in values]     # cast from string to int (index)
                         object_faces[len(object_faces)-1].append( values )
                 prev_line = line
+    else:
+        raise FileNotFoundError("Obj file not found: "+str(filename))
     return object_faces
 
 
@@ -153,10 +170,12 @@ def test(filename, expected={"v":0,"f":0,"tri":0}):
     
 if __name__ == "__main__":
     #house_plant = "../../models/house plant 2/house plant.obj"
-    plants3 = "../models/Flower/plants3.obj"
-    dome    = "../models/dome_c.obj"
-    wheat   = "../models/wheat/wheat1.obj"
-    
+    plants3 = "../../models/Flower/plants3.obj"
+    dome    = "../../models/dome_c.obj"
+    wheat   = "../../models/wheat/wheat1.obj"
+    frame   = "../../models/frame/positions_diffuse.obj"
+    v,f = get_all_vertex_face_objects(frame)
+    print( v )
 #    if test(plants3, expected={"v":381,"f":381,"tri":12290}):
 #        print ("Passed:", plants3)
 #    if test(dome, expected={"v":1,"f":1,"tri":180}):

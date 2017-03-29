@@ -6,13 +6,14 @@ from OpenGL.GLU import *
 import numpy
 import os, sys
 
+
 __EXPECTED_VERSION__ = '(2, 7)'
 if str(sys.version_info[:2]) != __EXPECTED_VERSION__:
     print "Incorrect Python version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
     print "Expected "+str(__EXPECTED_VERSION__)
     print "Actual "+str(sys.version_info[:2])
 
-EXPECTED_VERSION_OPENGL = ['3.1.1b1','3.1.1a1']
+EXPECTED_VERSION_OPENGL = ['3.1.1b1','3.1.1a1','3.0.2']
 if str(OpenGL.__version__) not in EXPECTED_VERSION_OPENGL:
     print "Incorrect OpenGL version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
     print "Expected "+str(EXPECTED_VERSION_OPENGL)
@@ -20,7 +21,7 @@ if str(OpenGL.__version__) not in EXPECTED_VERSION_OPENGL:
 
 import draw_calc_lighting
 from model_helpers import Updateable_Line
-from options import Key_Events
+from options import Key_Events, get_parsed_commandline_options
 
 
 
@@ -251,7 +252,7 @@ def enable_lighting():
 
 
  
-def main():
+def draw():
         global window 
         glutInit()
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
@@ -268,6 +269,18 @@ def main():
         glutMotionFunc(drag)
         InitGL(640, 480)
         glutMainLoop()
+
+def main():
+    global updateable_line
+    PARSE_OPTIONS,PARSE_ARGS = get_parsed_commandline_options()
+
+    if PARSE_OPTIONS.EVALUATION == 1:
+        draw()
+    elif PARSE_OPTIONS.EVALUATION == 2:
+        draw_calc_lighting.draw( updateable_line )
+    else:
+        pass
+        
  
 if __name__ == "__main__":
         main() 

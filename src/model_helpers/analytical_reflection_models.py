@@ -23,8 +23,17 @@ def BlinnPhong_specular(incident_vector, view_vector, surface_norm, shininess_ex
 
 
 def Lambert_diffuse( incident_vector, surface_norm ):
-    """ 
-    Adapted from source: http://pyopengl.sourceforge.net/context/tutorials/shader_5.html
+    """
+    Calculate lambert's cosine law of diffuse reflectance.
+
+    Cosine and dot product will yield equivalence, under condition:
+     - https://en.wikipedia.org/wiki/Dot_product#Equivalence_of_the_definitions
+
+    Source adapted from: http://pyopengl.sourceforge.net/context/tutorials/shader_5.html
+        "With our normal and our directional light, we can apply Lambert's law to calculate the
+        diffuse component multiplier for any given vertex. Lambert's law looks for the cosine
+        of the two vectors (the Normal and the Light Location vector), which is calculated by
+        taking the dot product of the two (normalized) vectors."
     """
     normalized_incident_vec = normalize(incident_vector)
     return max( 0.0, np.dot(surface_norm , normalized_incident_vec) )

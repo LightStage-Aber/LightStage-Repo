@@ -6,6 +6,9 @@ def get_sorted_column_from_result_file( best_led_data, column_index, qty ):
     """
     BEST_LED_DATA, CSV_METRIC_COLUMN_INDEX, QTY_OF_BEST_LEDS_REQUIRED
     """
+    assert( type(best_led_data) is list )
+    assert( column_index >= 0 )
+    assert( qty >= 0 ) 
     # Order by column index. Take top values. Get index positions. Return list of 
     l = best_led_data
     l = sorted(l,key=lambda x: x[column_index], reverse=True)

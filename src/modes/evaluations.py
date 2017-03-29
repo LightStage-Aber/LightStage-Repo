@@ -20,6 +20,14 @@ class Evaluator():
         """
         Construct evaluator object.
         """
+    def display(self, triangles, shape_name, kwords={} ):
+        """
+        Display
+        """
+    def evaluate(self, triangles, shape_name, kwords={} ):
+        """
+        Evaluate 
+        """
     def evaluate(self):
         """
         Evaluate 

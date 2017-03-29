@@ -170,7 +170,7 @@ def plane_rotation( n1, n2 ):
 def normalize(a):
     a = np.array(a)
     return np.divide(a, math.sqrt(np.dot(a, a))) 
-    #   return np.divide(a, np.linalg.norm(a)) -- 50% Slower
+    #   return np.divide(a, np.linalg.norm(a)) -- is slower according to timeit test
     #    In [7]: np.divide(a, math.sqrt(np.dot(a, a)))
     #    Out[7]: array([ 0.42426407,  0.56568542,  0.70710678])
     #    In [8]: np.divide(a, np.linalg.norm(a))

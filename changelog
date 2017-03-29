@@ -1,6 +1,6 @@
 
 
-LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
+LightStage_LightPositioning_EvaluationTool v0.1.6 -- 2017/03/29
 ----------------------------------------------------------
 == PREREQUISITES
 ------------------
@@ -22,7 +22,8 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
 -----------
     /src                                    - Code.
     /models                                 - Sample 3D obj model files.
-    /blinn-phong+lambert_shading_scores     - Example scoring result data files.
+    /results                                - Example scoring result data files.
+    /properties								- Configuration file to simplify running of experiments; in particular with command line options: -e3 through to -e9.
     
     
 == USAGE EXAMPLES:
@@ -36,7 +37,7 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
     python run.py -s 2 -t '(1,0,0)' -c 2
         Run in display mode, with a mini-dome scaled (-s) by 2, moved to position '1' on X-axis, with camera layout (-c) as 'even bias'.
 
-    python run.py -p "../models/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../results/blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
+    python run.py -p "../models/dome/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../results/blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
         Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
         Loads result data file (-r) for the dome model: ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
 
@@ -90,78 +91,117 @@ LightStage_IlluminationOfTargetObject v0.1.2 -- 2016/03/08
     
     == EVALUATION MODE:
         - Command line option (-m 2).
-        - This mode will evaluate and log results to file evaluating ray reflection intensities into the observing cameras.
-        - For a simple target model with 180 triangle it took 1.5 minutes to evaluate.
-        - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt' 
-        - The evalution depends on:
-            - camera positions
-            - 6 rotations of the target model within the LightStage.
-            - LED and quantity of LEDs desired
-            - target model, positioning (scale and translation inside dome)
-        - *We recommended that the camera layout and model positioning be set and previewed in the Display Mode before running in Evaluation Mode.*
-        - The evaluation measures:
-            - the light intensity score measure, uses Lambertian and Blinn-Phong reflection models to accumulate diffuse and specular 
-              reflection intensities per tri, per LED.
-            - the coverage error scoring measure, minimises the quantity of unlit target model triangle surfaces. This is done by 
-              prioritising LEDs that are alone in lighting a tri surface, followed by prioritising LEDs that have a high 
-              AccumIntensity * QtyTriHit score. With a limited search step and search depth, the best scoring set of LEDs are recorded, 
-              of quantity (-l). 
-              + AccumIntensity is the reflection intensity score per LED per tri of the target model, accumulated over the quantity of target model rotations.
-              + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
+        - This mode will execute evaluations of the given experiment (-e) type. 
+        - To visually see what will be evaluated, use both the -m1 and -eX command line options. Then to evaluate that (recreated) scene, use -m2 -eX.
+        - Option: (-m2 -e3 or 4)
+        	- Evaluate the lambertian diffuse illuminance score of a set of index points read from an .csv results file and mapped to the internal dome's vertices by index, configuration set in /properties/default.properties.
+		- Option: (-m2 -e7,8 or 9)
+        	- Evaluate the lambertian diffuse illuminance score of a set of vertex points read from an .obj file, configuration set in /properties/default.properties.
+        	- For evaluation of the raw vertex points loaded from the .obj file, use -e7.
+        	- For mappings to the dome's closest (Euclidean dist) vertex point, use -e8.
+        	- For mappings to the dome's closest (Euclidean dist) edge (of approx 10 points per edge), use -e9.
+        	- Each will write out CSV results (including surface illuminations) to a csv file in a directory specified in default.properties.
+        - Option: (-m2 -e2)
+		    - This mode will evaluate and log results to file evaluating ray reflection intensities into the observing cameras.
+		    - For a simple target model with 180 triangle it took 1.5 minutes to evaluate.
+		    - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt' 
+		    - The evalution depends on:
+		        - camera positions
+		        - 6 rotations of the target model within the LightStage.
+		        - LED and quantity of LEDs desired
+		        - target model, positioning (scale and translation inside dome)
+		    - *We recommended that the camera layout and model positioning be set and previewed in the Display Mode before running in Evaluation Mode.*
+		    - The evaluation measures:
+		        - the light intensity score measure, uses Lambertian and Blinn-Phong reflection models to accumulate diffuse and specular 
+		          reflection intensities per tri, per LED.
+		        - the coverage error scoring measure, minimises the quantity of unlit target model triangle surfaces. This is done by 
+		          prioritising LEDs that are alone in lighting a tri surface, followed by prioritising LEDs that have a high 
+		          AccumIntensity * QtyTriHit score. With a limited search step and search depth, the best scoring set of LEDs are recorded, 
+		          of quantity (-l). 
+		          + AccumIntensity is the reflection intensity score per LED per tri of the target model, accumulated over the quantity of target model rotations.
+		          + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
             
             
 
-== USAGE OPTIONS:
--------------------        
-    Usage: run.py [options]
-    
-    Options:
-      -h, --help            show this help message and exit
-      -m NUM, --mode=NUM    Specify the tool mode. 1=Display mode (default).
-                            2=Evaluation mode.
-      -e NUM, --evaluation-metric-mode=NUM
-                            Specify the evaluation metric mode.'-e1' =Use
-                            Reflectance Measures (default).
-                            <NOT IMPLEMENTED> '-e2' =Use Illuminance
-                            Measure Search (Lambertian only). '-e3' =Use
-                            Illuminance Measure (Lambertian only); depends on
-                            loaded result file (-r) read from column index 3 with
-                            binary value 1.</NOT IMPLEMENTED>
-      -p PATH, --target-path=PATH
-                            Specify the path to an .obj file of the target model.
-                            For example: '../dome_c.obj'. Default is a mini-dome.
-      -s SCALE, --target-scale=SCALE
-                            Specify the target model scaling factor. - Default=1.0
-      -t (x,y,z), --target-translation=(x,y,z)
-                            Specify the target model translation. i.e. move -1 on
-                            Y-axis: '(0,-1,0)'
-      -c NUM, --camera-layout=NUM
-                            Specify the camera layout. 1=Realistic bias (default).
-                            2=Even bias.
-      -l NUM, --qty-leds=NUM
-                            Specify the number of LEDs to show in demo and to
-                            evaluate in range(0-92). Default is 44. *Note: This
-                            value is not currently recalled from any results
-                            files.*
-      -r PATH, --load-result-file=PATH
-                            Specify the path to an LED score result data file. For
-                            example: '../led_scores_xxx.csv'.
-      -k NUM, --reflectance-score=NUM
-                            Specify the reflectance model scorings used in
-                            evaluation mode. 1=Lambert's diffuse only. 2=Lambert's
-                            diffuse and Blinn-Phong's specular (default).
-      -d NUM, --display-evaluation-metric=NUM
-                            Specify the evaluation metric display mode from result
-                            file. 1=Use Index Column 1 Scores (default). 2=Use
-                            Index Column 3 Scores (Lambertian only).
+$ python run.py -h
+Usage: run.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -m NUM, --mode=NUM    Specify the tool mode. 1=Display mode (default).
+                        2=Evaluation mode.
+  -e NUM, --evaluation-metric-mode=NUM
+                        Specify the evaluation metric mode.
+                        '-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action.
+                        '-e1' =Use Reflectance Measures. 
+                        '-e2' = (Disabled) Use Illuminance Measure Monte Carlo Search (Lambertian only). 
+                        '-e3' =Use Illuminance Measure (Lambertian only) to evaluate 'Single' loaded
+                        file; depends on properties file values: see '[EvaluateSingleResultsFile]' 
+                        and '[FrameModel]' - (file, qty, column, etc.) in 'default.properties' file.
+                        '-e4' =Use Illuminance Measure (Lambertian only) to evaluate 'Single Edge(10:3926)' loaded file;
+                        depends on properties file values: see '[EvaluateEdgeMapSingleResultsFile]'
+                        '-e7' =Use Illuminance Measure (Lambertian only) to evaluate 'RAW' vertex 
+                        position file; depends on properties file values: see '[LightPositions]'
+                        '-e8' =Use Illuminance Measure (Lambertian only) to evaluate 'Vertex
+                        Mappings' vertex position file; depends on properties file values: see '[LightPositions]'
+                        '-e9' =Use Illuminance Measure (Lambertian only) to evaluate
+                        'Edge(10) Mappings' vertex position file; depends on properties file values: see '[LightPositions]'
+  -p PATH, --target-path=PATH
+                        Specify the path to an .obj file of the target model.
+                        For example: '../models/dome/dome_c.obj'. Default is a mini-dome.
+  -s SCALE, --target-scale=SCALE
+                        Specify the target model scaling factor. - Default=1.0
+  -t (x,y,z), --target-translation=(x,y,z)
+                        Specify the target model translation. i.e. move -1 on
+                        Y-axis: '(0,-1,0)'
+  -c NUM, --camera-layout=NUM
+                        Specify the camera layout. 1=Realistic bias (default).
+                        2=Even bias.
+  -l NUM, --qty-leds=NUM
+                        Specify the number of LEDs to show in demo and to
+                        evaluate in range(0-92). Default is 44. *Note: This
+                        value is not currently recalled from any results
+                        files.*
+  -r PATH, --load-result-file=PATH
+                        Specify the path to an LED score result data file. For
+                        example: '../led_scores_xxx.csv'.
+  -k NUM, --reflectance-score=NUM
+                        Specify the reflectance model scorings used in
+                        evaluation mode. 1=Lambert's diffuse only. 2=Lambert's
+                        diffuse and Blinn-Phong's specular (default).
+  -d NUM, --display-evaluation-metric=NUM
+                        Specify the evaluation metric display mode from result
+                        file. 1=Use Index Column 1 Scores (default). 2=Use
+                        Index Column 3 Scores (Lambertian only).
+
+
+
+
+
+
+
+
+
 
     
-    
+LightStage_LightPositioning_EvaluationTool v0.1.6 -- 2017/03/29
+-----------------------------------------------------------------------------------------------------------------------------------------------
+- Added mapping of vertex positions loaded from .obj file, used with '-e3' command line option and configured using default.properties file.
+- Minor changes for experimental testing and to documentation. Results not included in commit.
+
+
+LightStage_LightPositioning_EvaluationTool v0.1.5 -- 2017/02/03
+-----------------------------------------------------------------------------------------------------------------------------------------------
+- Added loading explicit light (FrameModel) vertex positions from an .obj file, via the .ini format file at "../properties/default.properties".
+- Evaluate those light positions with standard deviation of lambert diffuse reflectance (luminance only) in class 'MeasureLoadedLightPositions' in luminance.py.
+- Map loaded light vertex positions (from file) to the closest frame joint positions (from "/data_3d/dome_obj_data.py").
+
     
 -----------------------------------------------------------------------------------------------------------------------------------------------
 LightStage_LightPositioning_EvaluationTool v0.1.4 -- 2017/02/03
 - Renamed.
-- Refactored code after new luminance metrics and search method implementations were trialed. These new method implementations are not made available in this release.
+- Refactored code after new illuminance metrics and search method implementations were trialed. These new method implementations are not made available in this release.
+- Note that the mappings in 'dome_obj_data.py' have been modified (by AOS) to match the actual dome vertex numberings.
 - Coming up next: evaluate a loaded set of vertices. Map loaded set of vertices to possible frame mounting positions.
     
     

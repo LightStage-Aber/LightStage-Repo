@@ -10,7 +10,6 @@ from data_3d import *
   
   
   
-  
 # ----------------------------------------------
 
 def make_triangle_face( tri = [( 0.0, 0.0, 0.0), (-1.0,-1.0,-1.0), (1.0,1.0,-1.0)] ):
@@ -256,9 +255,15 @@ def draw_cameras( cameraVertices ):
 def draw_wire_sphere( vertex=(0,0,0), size=1, scale=1 ):
         glPushMatrix()
         glTranslatef( vertex[0]*scale, vertex[1]*scale, vertex[2]*scale )
-        glutSolidSphere(0.4, 9, 9)
+        glutWireSphere(0.4, 9, 9)
         glPopMatrix()
-                
+
+
+def draw_solid_sphere( vertex=(0,0,0), size=1, scale=1 ):
+        glPushMatrix()
+        glTranslatef( vertex[0]*scale, vertex[1]*scale, vertex[2]*scale )
+        glutSolidSphere(0.4, 9, 9)
+        glPopMatrix()                
 
 def draw_dome( scale_multiplier =2,
                 show_points     = False,

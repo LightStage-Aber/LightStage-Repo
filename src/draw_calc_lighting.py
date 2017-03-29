@@ -205,72 +205,182 @@ def draw( updateable_line ):
         
         camerasVertices = camera_layout.getCameraPositions()
         
-        draw_axes(scale, 2)
-        draw_cameras( camerasVertices )
-        triangles, shape_name = get_target_shape_triangles()
-        if SELECT_BEST_LEDS:
-            draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name )
-        else:
+        if glutGet(GLUT_INIT_STATE) == 1: # Hack to make running evaluations faster, ideal implementation will rewrite run.py module.
+            draw_axes(scale, 2)
+            draw_cameras( camerasVertices )
             
-            if PARSE_OPTIONS.EVALUATION_METRIC_MODE == 1:       #EVALUATION_MODE_REFLECTANCE:
-                all_leds        = draw_dome( scale , True )
+        triangles, shape_name = get_target_shape_triangles()
+        if PARSE_OPTIONS.EVALUATION_METRIC_MODE == 0:
+
+            if PARSE_OPTIONS.EVALUATION == 1:
+                draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                print("No evaluation mode. Try demo mode (i.e. -m1)")
+                pass
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 1:       #EVALUATION_MODE_REFLECTANCE:
+            x = MeasureReflectanceIntoCameras()
+            if PARSE_OPTIONS.EVALUATION == 1:
+                all_leds = draw_dome(scale, True)
                 kwords = {
-                	'LED_SCORE_LOG_FILE':LED_SCORE_LOG_FILE,
-                	'CSV_METRIC_COLUMN_INDEX':3, 
-                	'QTY_OF_BEST_LEDS_REQUIRED':44,
-                	'all_leds':all_leds,
-                	'DO_EVALUATIONS':DO_EVALUATIONS,
-                	'TARGET_ROTATIONS':TARGET_ROTATIONS,
-                	'TARGET_TRIANGLES':TARGET_TRIANGLES,
-                	'TARGET_ROTATION_DEGREES':TARGET_ROTATION_DEGREES,
-                	'TARGET_ROTATION_AXIS':TARGET_ROTATION_AXIS,
-                	'TARGET_SCALE':TARGET_SCALE,
-                	'TARGET_TRANSLATION':TARGET_TRANSLATION,
-                	'logged_score_to_file':logged_score_to_file,
-                	'SELECT_BEST_LEDS':SELECT_BEST_LEDS,
-                	'PARSE_OPTIONS':PARSE_OPTIONS,
+                    'LED_SCORE_LOG_FILE': LED_SCORE_LOG_FILE,
+                    'CSV_METRIC_COLUMN_INDEX': 3,
+                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
+                    'all_leds': all_leds,
+                    'DO_EVALUATIONS': DO_EVALUATIONS,
+                    'TARGET_ROTATIONS': TARGET_ROTATIONS,
+                    'TARGET_TRIANGLES': TARGET_TRIANGLES,
+                    'TARGET_ROTATION_DEGREES': TARGET_ROTATION_DEGREES,
+                    'TARGET_ROTATION_AXIS': TARGET_ROTATION_AXIS,
+                    'TARGET_SCALE': TARGET_SCALE,
+                    'TARGET_TRANSLATION': TARGET_TRANSLATION,
+                    'logged_score_to_file': logged_score_to_file,
+                    'SELECT_BEST_LEDS': SELECT_BEST_LEDS,
+                    'PARSE_OPTIONS': PARSE_OPTIONS,
                 }
-                x = MeasureReflectanceIntoCameras()
-                x.evaluate( updateable_line, camerasVertices, triangles, shape_name , camera_layout, kwords )
-            elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 2:     #EVALUATION_MODE_ILLUMINATION:
-                #evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name )
-                raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
-                sys.exit()
-                
-            elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 3:     #EVALUATION_MODE_ILLUMINATION_SINGLE:
-                #evaluate_illuminance_score_single_result_file_set( updateable_line, camerasVertices, triangles, shape_name )
-                raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
-                sys.exit()
-                
-            elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 4:     #EVALUATION_MODE_ILLUMINATION_MULTI:
-                raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
-                sys.exit()
+                x.display(triangles, shape_name, kwords )
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                #all_leds = draw_dome(scale, True)
+                all_leds = draw_dome(scale,
+                                     show_points=False,
+                                     show_led_spheres=False,
+                                     show_tris=False,
+                                     show_lines=False,
+                                     get_not_show_tris=False,
+                                     show_selected_leds=None)
+                kwords = {
+                    'LED_SCORE_LOG_FILE': LED_SCORE_LOG_FILE,
+                    'CSV_METRIC_COLUMN_INDEX': 3,
+                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
+                    'all_leds': all_leds,
+                    'DO_EVALUATIONS': DO_EVALUATIONS,
+                    'TARGET_ROTATIONS': TARGET_ROTATIONS,
+                    'TARGET_TRIANGLES': TARGET_TRIANGLES,
+                    'TARGET_ROTATION_DEGREES': TARGET_ROTATION_DEGREES,
+                    'TARGET_ROTATION_AXIS': TARGET_ROTATION_AXIS,
+                    'TARGET_SCALE': TARGET_SCALE,
+                    'TARGET_TRANSLATION': TARGET_TRANSLATION,
+                    'logged_score_to_file': logged_score_to_file,
+                    'SELECT_BEST_LEDS': SELECT_BEST_LEDS,
+                    'PARSE_OPTIONS': PARSE_OPTIONS,
+                }
+                x.evaluate(updateable_line, camerasVertices, triangles, shape_name, camera_layout, kwords)
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 2:     #EVALUATION_MODE_ILLUMINATION:
+            #evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name )
+
+            if PARSE_OPTIONS.EVALUATION == 1:
+                #draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
+                #evaluate_illuminance_score(updateable_line, camerasVertices, triangles, shape_name)
+                print("This evaluation metric mode has been disabled and is marked for refactoring.")
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                print("This evaluation metric mode has been disabled and is marked for refactoring.")
+            sys.exit()
+            
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 3:     #EVALUATION_MODE_ILLUMINATION_SINGLE:
+        
+            x = MeasureIlluminanceOfResultsFileSet_MappingToDomeVertices()
+            if PARSE_OPTIONS.EVALUATION == 1:
                 all_leds        = draw_dome( scale , True )
                 kwords = {
-                	'LED_SCORE_LOG_FILE':LED_SCORE_LOG_FILE,
-                	'CSV_METRIC_COLUMN_INDEX':3, 
-                	'QTY_OF_BEST_LEDS_REQUIRED':44,
+                    'scale':scale,
+                	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
                 	'all_leds':all_leds
                 }
-                evaluate_illuminance_score_multiple_result_file_set( updateable_line, camerasVertices, triangles, shape_name, 100000, kwords )
-                
-            elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 5:     #EVALUATION_MODE_ILLUMINATION_WEIGHT:
-                ## --- evaluate_illuminance_score_result_file_set_tune_weights( updateable_line, camerasVertices, triangles, shape_name )
-                #x = MeasureIlluminanceTuneWeights_AOS()
-                #x.evaluate(updateable_line, camerasVertices, triangles, shape_name)
-                raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
-                sys.exit()
-                
-            elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 6:     #EVALUATION_MODE_ILLUMINATION_WEIGHT:
-                raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
-                sys.exit()
-                
-                kwords = {}
-                evaluate_minimised_distance_to_neighbours( camerasVertices, triangles, kwords )
-                
-            else:
-                print("Invalid evaluation mode selected. Check runtime argument -e (--evaluation-metric-mode).")
-                sys.exit()
+                x.display(triangles, shape_name, kwords )
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                all_leds        = draw_dome( scale ,
+                                            show_points     = False,
+                                            show_led_spheres= False,
+                                            show_tris       = False,
+                                            show_lines      = False,
+                                            get_not_show_tris  = False,
+                                            show_selected_leds = None )
+                kwords = {
+                    'scale':scale,
+                	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
+                	'all_leds':all_leds
+                }
+                x.evaluate(triangles, shape_name, kwords )
+            #evaluate_illuminance_score_single_result_file_set( updateable_line, camerasVertices, triangles, shape_name )
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 4:  # EVALUATION_MODE_ILLUMINATION_SINGLE EDGES:
+
+            x = MeasureIlluminanceOfResultsFileSet_MappingToDomeEdges()
+            if PARSE_OPTIONS.EVALUATION == 1:
+                kwords = {
+                    'scale': scale,
+                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
+                }
+                x.display(triangles, shape_name, kwords)
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                kwords = {
+                    'scale': scale,
+                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
+                }
+                x.evaluate(triangles, shape_name, kwords)
+
+
+            
+        # elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 4:     #EVALUATION_MODE_ILLUMINATION_MULTI:
+        #     raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
+        #     sys.exit()
+        #     all_leds        = draw_dome( scale , True )
+        #     kwords = {
+        #     	'LED_SCORE_LOG_FILE':LED_SCORE_LOG_FILE,
+        #     	'CSV_METRIC_COLUMN_INDEX':3,
+        #     	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
+        #     	'all_leds':all_leds
+        #     }
+        #     evaluate_illuminance_score_multiple_result_file_set( updateable_line, camerasVertices, triangles, shape_name, 100000, kwords )
+        #
+        # elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 5:     #EVALUATION_MODE_ILLUMINATION_WEIGHT:
+        #     ## --- evaluate_illuminance_score_result_file_set_tune_weights( updateable_line, camerasVertices, triangles, shape_name )
+        #     #x = MeasureIlluminanceTuneWeights_AOS()
+        #     #x.evaluate(updateable_line, camerasVertices, triangles, shape_name)
+        #     raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
+        #     sys.exit()
+        #
+        # elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 6:     #EVALUATION_MODE_ILLUMINATION_WEIGHT:
+        #     raise("This evaluation metric needs refactoring. To be refactored and tested. Now exiting.")
+        #     sys.exit()
+        #
+        #     kwords = {}
+        #     evaluate_minimised_distance_to_neighbours( camerasVertices, triangles, kwords )
+        
+        
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 7:
+            x = MeasureLoadedLightPositions()
+            kwords = {
+                'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED
+            }
+            if PARSE_OPTIONS.EVALUATION == 1:
+                x.display(triangles, shape_name, kwords )
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                x.evaluate(triangles, shape_name, kwords )
+            
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 8:
+            x = MeasureMappingOfLoadedLightPositions()
+            kwords = {
+            	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
+            }
+            if PARSE_OPTIONS.EVALUATION == 1:
+                x.display(triangles, shape_name, kwords )
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                x.evaluate(triangles, shape_name, kwords )
+            
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 9:
+            x = MeasureMappingToEdgesOfLoadedLightPositions()
+            kwords = {
+                'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED
+            }
+            if PARSE_OPTIONS.EVALUATION == 1:
+                x.display(triangles, shape_name, kwords )
+            elif PARSE_OPTIONS.EVALUATION == 2:
+                x.evaluate(triangles, shape_name, kwords )
+        else:
+            print("Invalid evaluation mode selected. Check runtime argument -e (--evaluation-metric-mode).")
+            sys.exit()
             
 
 
@@ -295,9 +405,6 @@ def draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name 
         filename    = LED_SCORE_LOG_FILE if os.path.exists(LED_SCORE_LOG_FILE) else "(Press L to load file)"
         for tri in triangles:
             make_triangle_face( tri )
-##            draw_wire_sphere( vertex=tri[0], size=1, scale=1 )
-##            draw_wire_sphere( vertex=tri[1], size=1, scale=1 )
-##            draw_wire_sphere( vertex=tri[2], size=1, scale=1 )
         
         string = []        
         string.append("Data file "+str(SCORE_DESCRIPTION)+": "+str(round(score,2)))
