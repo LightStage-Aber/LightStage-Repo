@@ -1,3 +1,17 @@
 *~
 *.pyc
 .~*
+demo/*
+results/*
+!results/lambert_shading_scores/
+!results/blinn-phong+lambert_shading_scores/
+!results/Sample_Lettvin_Results_Mar2017/
+properties/default.properties
+properties/default.properties.*
+src/data_3d/AOSMAPPED_23rdJune2016_dome_obj_data.py
+src/data_3d/AOSMAPPED_GOOD___dome_obj_data.py
+src/data_3d/UNMAPPED_17thJune2016_dome_obj_data.py
+test/*
+!test/helpers/*
+!test/*.py
+src/data_3d/junk/*

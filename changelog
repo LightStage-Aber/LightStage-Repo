@@ -120,16 +120,44 @@ LightStage_LightPositioning_EvaluationTool v0.1.6 -- 2017/03/29
 		          of quantity (-l). 
 		          + AccumIntensity is the reflection intensity score per LED per tri of the target model, accumulated over the quantity of target model rotations.
 		          + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
-            
-            
+
+    == TUNING EVALUATION MODE:
+        - Command line option (-m 3).
+            - An extension of (-m2) evaluation mode.
+            - This mode will tune (search for the best) LED position intensities values.
+            - Always use together with (-e), the given experiment type.
+        - Execute a search algorithm to "tune" (update) the intensity values, such that the normalised standard deviation measure improves.
+            - To visually see the scene and which light positions will be evaluated, use both the -m1 and -eX command line options.
+            - Run the intensity tuning search on a (recreated) scene, use -m3 -eX.
+            - Note, that the (-m2) evaluation step will produce the un-tuned intensities per LED position as (1,1,1,1,1,1, etc.).
+        - Choose the Search Algorithm and its parameters:
+            - See ./properties/default.properties file, under the [Tune] section:
+            - Option: "tune.mode=1"
+                - Execute a search using scipy.optimize.basinhopping.
+                - Method = L-BFGS-B, Intensity bounds are between 1.0 and 2.0 for all intensities.
+            - Option: "tune.mode=2"
+                - Execute an iterative regression, targetting the intensities with greatest surface z-scores.
+                - tune.regression.threshold=0.005 [Range: >=0]
+                - tune.regression.max_iterations=100 [Range: >=1]
+            - Other search algorithms options may be added later.
+        - Option: (-m3 -e3)
+             - Untested.
+        - Option: (-m3 -e7)
+             - Untested.
+        - Option: (-m3 -e8 or 9)
+             - Map the equally distributed positions (as -m1 or -m2 -e8/9).
+        - Option: (-m3 -e2)
+             - Untested.
 
 $ python run.py -h
 Usage: run.py [options]
 
 Options:
   -h, --help            show this help message and exit
-  -m NUM, --mode=NUM    Specify the tool mode. 1=Display mode (default).
+  -m NUM, --mode=NUM    Specify the tool mode.
+                        1=Display mode (default).
                         2=Evaluation mode.
+                        3=Tune-evaluation mode.
   -e NUM, --evaluation-metric-mode=NUM
                         Specify the evaluation metric mode.
                         '-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action.
@@ -177,23 +205,49 @@ Options:
 
 
 
+Todo: Planned release: LightStage_LightPositioning_EvaluationTool v0.1.82 -- 2017/05/
+Todo: - Integrate Saff97 spheres, via antiprism.
+Todo: - Integrate Repulsion by percentage move, via antiprism.
+Todo: - Create test suites for PLOS One paper including new Saff97 (as Geometric) and Repulsion by% with byJitter (as Repulsion).
+Todo: - Create test suites for PLOS One paper with new target models (plant dataset, head/face dataset, sphere).
 
 
+Todo: Planned release: - LightStage_LightPositioning_EvaluationTool v0.1.81 -- 2017/05/
+Todo: - Create test suites for PLOS One paper for Tuning tests.
 
 
+LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/04/25
+---------------------------------------------------------------
+Major changes:
+- Created test suites for PLOS One paper control experiments. Reevaluated Control and Monte Carlo experiment results.
+- Speed up visualisation with cached loaded (from ~1 FPS to ~30FPS). Added ToolSelector cache class to improve performance / remove requirement of file I/O every frame, (from ~1fps to ~30fps). Further improvements with "modern" opengl implementation (i.e. single glBegin/End batch call).
+- Bug fixed: bug in Edge-point determination/ definition; when support access is enabled, all edges connected to the removed support access vertex are ignored (not created).
+- Bug fixed: ensured correct usage of "loaded OBJ dome model vs hard coded dome model" for target and frame.
+Todo: - Add Tuning feature.
+Todo: - Create test suite and reevaluate Repulsion (Lettvin Edge10Mappings).
+
+Minor changes:
+- Added 'frame.withsupportaccess' (bool) to default.properties file, loaded and used -e3,4,7,8,9.
+- Refactorings and added unit tests.
+- Open issue: The hardcoded dome model has one missing tri on the model, due to the face mappings. The vertex mappings (by AOS 06/2016) to the physical dome are accurate. The missing tri affects the Face-to-Edge algorithm (i.e. Edge10) and evaluations using it as a target model.
 
 
     
+LightStage_LightPositioning_EvaluationTool v0.1.7 -- 2017/04/01
+---------------------------------------------------------------
+- Increased clipping distance ten fold to aid model loading and debugging.
+
+
 LightStage_LightPositioning_EvaluationTool v0.1.6 -- 2017/03/29
 -----------------------------------------------------------------------------------------------------------------------------------------------
-- Added mapping of vertex positions loaded from .obj file, used with '-e3' command line option and configured using default.properties file.
+- Added mapping of vertex positions loaded from .obj file to dome edges. Use with '-e9' command line option and configured using default.properties file.
 - Minor changes for experimental testing and to documentation. Results not included in commit.
 
 
 LightStage_LightPositioning_EvaluationTool v0.1.5 -- 2017/02/03
 -----------------------------------------------------------------------------------------------------------------------------------------------
 - Added loading explicit light (FrameModel) vertex positions from an .obj file, via the .ini format file at "../properties/default.properties".
-- Evaluate those light positions with standard deviation of lambert diffuse reflectance (luminance only) in class 'MeasureLoadedLightPositions' in luminance.py.
+- Evaluate those light positions with standard deviation of lambert diffuse reflectance (illuminance only) in class 'MeasureLoadedLightPositions' in illuminance.py.
 - Map loaded light vertex positions (from file) to the closest frame joint positions (from "/data_3d/dome_obj_data.py").
 
     

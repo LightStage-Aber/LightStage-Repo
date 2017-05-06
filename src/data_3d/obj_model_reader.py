@@ -1,7 +1,7 @@
 import os,sys
 import numpy as np
 from shape_validator import *
-
+from model_helpers import vector_maths
 
 class ParseError(Exception): pass;
 class TestFailedError(Exception): pass;
@@ -77,7 +77,11 @@ def apply_translate( triangles, translate_tris=(0,0,0) ):
             for k in range(len(translate_tris)):    # each axis in a point
                 triangles[i][j][k] = float(triangles[i][j][k]) + float(translate_tris[k])
     
-
+def get_triangle_centers( triangles ):
+    tris = []
+    for tri in triangles:
+        tris.append( vector_maths.find_center_of_triangle( tri ) )
+    return tris
 
 def read_vertices_objects(filename):    
     object_vertices = []

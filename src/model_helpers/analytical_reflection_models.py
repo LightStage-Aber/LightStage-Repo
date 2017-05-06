@@ -4,7 +4,7 @@ from vector_maths import normalize
 
 
 
-def BlinnPhong_specular(incident_vector, view_vector, surface_norm, shininess_exponent):
+def BlinnPhong_specular(incident_vector, view_vector, surface_norm, shininess_exponent, intensity=1.0):
     """ Return the Blinn-Phong specular intensity for a given light reflection into a viewpoint on a surface with a shininess factor.
     Source adapted from: http://ruh.li/GraphicsPhongBlinnPhong.html
     Ref: Blinn, James F. (1977): Models of light reflection for computer synthesized pictures 
@@ -18,11 +18,11 @@ def BlinnPhong_specular(incident_vector, view_vector, surface_norm, shininess_ex
         halfwayVector       = normalize(incident_vector + view_vector)
         specTmp             = max(np.dot(surface_norm, halfwayVector), 0.0)
         specularIntensity   = pow(specTmp, shininess_exponent)
-    return specularIntensity
+    return float(intensity * specularIntensity)
     
 
 
-def Lambert_diffuse( incident_vector, surface_norm ):
+def Lambert_diffuse( incident_vector, surface_norm, intensity=1.0 ):
     """
     Calculate lambert's cosine law of diffuse reflectance.
 
@@ -36,5 +36,5 @@ def Lambert_diffuse( incident_vector, surface_norm ):
         taking the dot product of the two (normalized) vectors."
     """
     normalized_incident_vec = normalize(incident_vector)
-    return max( 0.0, np.dot(surface_norm , normalized_incident_vec) )
+    return float(intensity * max( 0.0, np.dot(surface_norm , normalized_incident_vec) ))
     

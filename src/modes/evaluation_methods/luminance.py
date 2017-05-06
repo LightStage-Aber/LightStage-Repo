@@ -15,14 +15,14 @@ from model_helpers.vector_maths import rotate_triangles
 import surface_coverage_metric
 from coverage_datastructure import accumulated_coverage_datastructure
 
-from ..evaluations import Evaluator
+from ..evaluations import EvaluatorGeneric
 
 
 
 
 
 
-class MeasureReflectanceIntoCameras( Evaluator ):
+class MeasureReflectanceIntoCameras(EvaluatorGeneric):
     """
     Class to evaluate the reflectance of light into cameras, bounced from an object.
     

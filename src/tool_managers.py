@@ -1,16 +1,8 @@
 from __future__ import division
-from OpenGL.GL import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
-import numpy as np
-import math, sys, time;     currentMillis = lambda: int(round(time.time() * 1000))
-import itertools
-from collections import deque
-import random as rnd
 
-from options import *
+
+from options import getPropertiesFile, get_parsed_commandline_options
 from data_3d import *
-from model_helpers import *
 from modes import *
 from file_utils import *
 from modes.manipulate_results_data import *
@@ -25,16 +17,20 @@ from modes.manipulate_results_data import *
 PARSE_OPTIONS,PARSE_ARGS = get_parsed_commandline_options()
 
 
+class __AppConfig(object):
+    #todo: Refactor in place of globals in this module.
+    pass
 
 # Program's Config
-SELECT_BEST_LEDS             = True if PARSE_OPTIONS.EVALUATION == 1 else False 
-#TODO:-- Bug due to mutable state reused for multiple purposes (toggle_test_evaluation_mode() function), replacing with PARSE_OPTIONS.EVALUATION == 1. 
+SELECT_BEST_LEDS             = True if PARSE_OPTIONS.EVALUATION == 1 else False
+#TODO:-- Bug due to mutable state reused for multiple purposes (toggle_test_evaluation_mode() function), replacing with PARSE_OPTIONS.EVALUATION == 1.
 #     -- Solution: Repurpose this module as DEMO MODE ONLY. Move all evaluations to another model and module. Move argument parsing to the MAIN.
 
-QTY_OF_BEST_LEDS_REQUIRED    = PARSE_OPTIONS.LEDS_QTY;   default_QTY_OF_BEST_LEDS_REQUIRED = lambda: PARSE_OPTIONS.LEDS_QTY
-TARGET_SHAPE                 = PARSE_OPTIONS.TARGET_SHAPE          #None
-TARGET_SCALE                 = PARSE_OPTIONS.TARGET_SCALE          #0.01
-TARGET_TRANSLATION           = eval(PARSE_OPTIONS.TARGET_TRANSLATION)    #(0,-3,0)
+QTY_OF_BEST_LEDS_REQUIRED    = PARSE_OPTIONS.LEDS_QTY
+default_QTY_OF_BEST_LEDS_REQUIRED = lambda: PARSE_OPTIONS.LEDS_QTY
+TARGET_SHAPE                 = PARSE_OPTIONS.TARGET_SHAPE          # None
+TARGET_SCALE                 = PARSE_OPTIONS.TARGET_SCALE          # 0.01
+TARGET_TRANSLATION           = eval(PARSE_OPTIONS.TARGET_TRANSLATION)    # (0,-3,0)
 
 # Display Configuration for Scoring
 USE_SHADING_SCORE       = True if PARSE_OPTIONS.DISPLAY_EVALUATION_METRIC_OPTION == 1 else False
@@ -200,27 +196,173 @@ def decrement_LED_quantity():
 # --- Draw simulation objects
 # ======================================================================
 
-def draw( updateable_line ):
-        global camera_layout, scale
-        
-        camerasVertices = camera_layout.getCameraPositions()
-        
-        if glutGet(GLUT_INIT_STATE) == 1: # Hack to make running evaluations faster, ideal implementation will rewrite run.py module.
-            draw_axes(scale, 2)
-            draw_cameras( camerasVertices )
-            
-        triangles, shape_name = get_target_shape_triangles()
+
+class Tool:
+    def __init__(self):
+        global scale
+        self.scale = scale
+        self.cameras_vertices = camera_layout.getCameraPositions()
+        self.tool = ToolSelector(self.scale)
+        self.OLD_TOOLS_HERE = OldToolSelector_Untested(self.scale)
+
+    def run( self, updateable_line ):
+        # TODO: This is a hack to make running evaluations faster. An ideal implementation will refactor run.py module to separate GL from numerical evaluations.
+        if glutGet(GLUT_INIT_STATE) == 1:
+            draw_axes(self.scale, 2)
+            draw_cameras(self.cameras_vertices)
+
+        tool_selected = self.tool.selector( self.scale )
+
+        if not tool_selected:
+            self.OLD_TOOLS_HERE.selector(updateable_line, self.scale, self.cameras_vertices)
+
+
+
+class ToolSelector(object):
+    def __init__(self, scale):
+        self.cached_tool = None
+        self.triangles, self.shape_name = get_target_shape_triangles()
+        self.scale = scale
+
+    def selector(self, scale):
+        result = True
+        triangles       = self.triangles[:]
+        shape_name      = self.shape_name
+        do_demo         = PARSE_OPTIONS.EVALUATION == 1
+        do_evaluation   = PARSE_OPTIONS.EVALUATION == 2
+        do_tune         = PARSE_OPTIONS.EVALUATION == 3
+
+        # todo: This is a hack. Replace with polymorphic calls.
+        if PARSE_OPTIONS.EVALUATION_METRIC_MODE == 3:
+            kwords = {
+                'all_leds': draw_dome(scale,
+                                 show_points=False,
+                                 show_led_spheres=False,
+                                 show_tris=False,
+                                 show_lines=False,
+                                 get_not_show_tris=False,
+                                 show_selected_leds=None)
+            }
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else VertexIndexPositionEvaluator(kwords)
+            if do_demo:
+                self.cached_tool.display(triangles)
+            elif do_evaluation:
+                self.cached_tool.evaluate(triangles)
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
+                # evaluate_illuminance_score_single_result_file_set( updateable_line, camerasVertices, triangles, shape_name )
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 4:  # EVALUATION_MODE_ILLUMINATION_SINGLE EDGES:
+
+            kwords = {
+                'all_leds': draw_dome(scale,
+                                 show_points=False,
+                                 show_led_spheres=False,
+                                 show_tris=False,
+                                 show_lines=False,
+                                 get_not_show_tris=False,
+                                 show_selected_leds=None)
+            }
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else Edge10IndexPositionEvaluator(kwords)
+
+            if do_demo:
+                self.cached_tool.display(triangles)
+            elif do_evaluation:
+                self.cached_tool.evaluate(triangles)
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 7:
+            kwords = {
+                'all_leds': draw_dome(scale,
+                                 show_points=False,
+                                 show_led_spheres=False,
+                                 show_tris=False,
+                                 show_lines=False,
+                                 get_not_show_tris=False,
+                                 show_selected_leds=None)
+            }
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else RawPositionEvaluator(kwords)
+
+            if do_demo:
+                self.cached_tool.display( triangles )
+            elif do_evaluation:
+                self.cached_tool.evaluate( triangles )
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 8:
+            kwords = {
+                'all_leds': draw_dome(scale,
+                                      show_points=False,
+                                      show_led_spheres=False,
+                                      show_tris=False,
+                                      show_lines=False,
+                                      get_not_show_tris=False,
+                                      show_selected_leds=None)
+            }
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else VertexMappedPositionEvaluator(kwords)
+            if do_demo:
+                self.cached_tool.display(triangles)
+            elif do_evaluation:
+                self.cached_tool.evaluate(triangles)
+            elif do_tune:
+                self.cached_tool.tune(triangles, shape_name, kwords)
+
+        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 9:
+            kwords = {
+                'all_leds': draw_dome(scale,
+                                      show_points=False,
+                                      show_led_spheres=False,
+                                      show_tris=False,
+                                      show_lines=False,
+                                      get_not_show_tris=False,
+                                      show_selected_leds=None)
+            }
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else Edge10MappedPositionEvaluator(kwords)
+            if do_demo:
+                self.cached_tool.display(triangles)
+            elif do_evaluation:
+                self.cached_tool.evaluate(triangles)
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
+        else:
+            result = False
+        return result
+
+class OldToolSelector_Untested(ToolSelector):
+    warned = False
+    def selector(self, updateable_line, scale, camerasVertices):
+        global camera_layout
+        if not OldToolSelector_Untested.warned:
+            print("Warning pre:v0.1.3 mode selected: Check runtime argument -e (--evaluation-metric-mode).")
+            print("--Untested features ahead--")
+            OldToolSelector_Untested.warned = True
+        triangles       = self.triangles[:]
+        shape_name      = self.shape_name
+        do_demo         = PARSE_OPTIONS.EVALUATION == 1
+        do_evaluation   = PARSE_OPTIONS.EVALUATION == 2
+        do_tune         = PARSE_OPTIONS.EVALUATION == 3
+
+        # todo: This is a hack. Replace with polymorphic calls. Separate off the pre-V0.1.3 code that depend on options and globals instead of depend on properties file. Move luminance.py module code and unused reflectance modes - METRIC_MODE:0,1,4,5,6 out.
         if PARSE_OPTIONS.EVALUATION_METRIC_MODE == 0:
 
-            if PARSE_OPTIONS.EVALUATION == 1:
+            if do_demo:
                 draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
-            elif PARSE_OPTIONS.EVALUATION == 2:
+            elif do_evaluation:
                 print("No evaluation mode. Try demo mode (i.e. -m1)")
+                pass
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
                 pass
 
         elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 1:       #EVALUATION_MODE_REFLECTANCE:
-            x = MeasureReflectanceIntoCameras()
-            if PARSE_OPTIONS.EVALUATION == 1:
+            self.cached_tool = self.cached_tool if self.cached_tool is not None else MeasureReflectanceIntoCameras()
+            if do_demo:
                 all_leds = draw_dome(scale, True)
                 kwords = {
                     'LED_SCORE_LOG_FILE': LED_SCORE_LOG_FILE,
@@ -238,8 +380,8 @@ def draw( updateable_line ):
                     'SELECT_BEST_LEDS': SELECT_BEST_LEDS,
                     'PARSE_OPTIONS': PARSE_OPTIONS,
                 }
-                x.display(triangles, shape_name, kwords )
-            elif PARSE_OPTIONS.EVALUATION == 2:
+                self.cached_tool.display(triangles, shape_name, kwords)
+            elif do_evaluation:
                 #all_leds = draw_dome(scale, True)
                 all_leds = draw_dome(scale,
                                      show_points=False,
@@ -264,61 +406,24 @@ def draw( updateable_line ):
                     'SELECT_BEST_LEDS': SELECT_BEST_LEDS,
                     'PARSE_OPTIONS': PARSE_OPTIONS,
                 }
-                x.evaluate(updateable_line, camerasVertices, triangles, shape_name, camera_layout, kwords)
+                self.cached_tool.evaluate(updateable_line, camerasVertices, triangles, shape_name, camera_layout, kwords)
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
 
         elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 2:     #EVALUATION_MODE_ILLUMINATION:
             #evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name )
 
-            if PARSE_OPTIONS.EVALUATION == 1:
+            if do_demo:
                 #draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
                 #evaluate_illuminance_score(updateable_line, camerasVertices, triangles, shape_name)
                 print("This evaluation metric mode has been disabled and is marked for refactoring.")
-            elif PARSE_OPTIONS.EVALUATION == 2:
+            elif do_evaluation:
                 print("This evaluation metric mode has been disabled and is marked for refactoring.")
+            elif do_tune:
+                print("No tune mode. Try demo mode (i.e. -m1)")
+                pass
             sys.exit()
-            
-        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 3:     #EVALUATION_MODE_ILLUMINATION_SINGLE:
-        
-            x = MeasureIlluminanceOfResultsFileSet_MappingToDomeVertices()
-            if PARSE_OPTIONS.EVALUATION == 1:
-                all_leds        = draw_dome( scale , True )
-                kwords = {
-                    'scale':scale,
-                	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
-                	'all_leds':all_leds
-                }
-                x.display(triangles, shape_name, kwords )
-            elif PARSE_OPTIONS.EVALUATION == 2:
-                all_leds        = draw_dome( scale ,
-                                            show_points     = False,
-                                            show_led_spheres= False,
-                                            show_tris       = False,
-                                            show_lines      = False,
-                                            get_not_show_tris  = False,
-                                            show_selected_leds = None )
-                kwords = {
-                    'scale':scale,
-                	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
-                	'all_leds':all_leds
-                }
-                x.evaluate(triangles, shape_name, kwords )
-            #evaluate_illuminance_score_single_result_file_set( updateable_line, camerasVertices, triangles, shape_name )
-
-        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 4:  # EVALUATION_MODE_ILLUMINATION_SINGLE EDGES:
-
-            x = MeasureIlluminanceOfResultsFileSet_MappingToDomeEdges()
-            if PARSE_OPTIONS.EVALUATION == 1:
-                kwords = {
-                    'scale': scale,
-                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
-                }
-                x.display(triangles, shape_name, kwords)
-            elif PARSE_OPTIONS.EVALUATION == 2:
-                kwords = {
-                    'scale': scale,
-                    'QTY_OF_BEST_LEDS_REQUIRED': QTY_OF_BEST_LEDS_REQUIRED,
-                }
-                x.evaluate(triangles, shape_name, kwords)
 
 
             
@@ -347,41 +452,7 @@ def draw( updateable_line ):
         #
         #     kwords = {}
         #     evaluate_minimised_distance_to_neighbours( camerasVertices, triangles, kwords )
-        
-        
-        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 7:
-            x = MeasureLoadedLightPositions()
-            kwords = {
-                'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED
-            }
-            if PARSE_OPTIONS.EVALUATION == 1:
-                x.display(triangles, shape_name, kwords )
-            elif PARSE_OPTIONS.EVALUATION == 2:
-                x.evaluate(triangles, shape_name, kwords )
-            
-        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 8:
-            x = MeasureMappingOfLoadedLightPositions()
-            kwords = {
-            	'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED,
-            }
-            if PARSE_OPTIONS.EVALUATION == 1:
-                x.display(triangles, shape_name, kwords )
-            elif PARSE_OPTIONS.EVALUATION == 2:
-                x.evaluate(triangles, shape_name, kwords )
-            
-        elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 9:
-            x = MeasureMappingToEdgesOfLoadedLightPositions()
-            kwords = {
-                'QTY_OF_BEST_LEDS_REQUIRED':QTY_OF_BEST_LEDS_REQUIRED
-            }
-            if PARSE_OPTIONS.EVALUATION == 1:
-                x.display(triangles, shape_name, kwords )
-            elif PARSE_OPTIONS.EVALUATION == 2:
-                x.evaluate(triangles, shape_name, kwords )
-        else:
-            print("Invalid evaluation mode selected. Check runtime argument -e (--evaluation-metric-mode).")
-            sys.exit()
-            
+
 
 
 
@@ -422,21 +493,41 @@ def draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name 
             draw_text(string[i],20,20+(i*15))
 
 
+
 def get_target_shape_triangles():
     global TARGET_TRIANGLES, TARGET_SHAPE, TARGET_SHAPE_NAME
+    # Here be dragons..
+    filename = "../models/dome/dome_c.obj"
+    shape_name = "Dome"
+    dome_scale = 1
     if TARGET_TRIANGLES == None:
-        if TARGET_SHAPE == None:
-            triangles = draw_dome( TARGET_SCALE , False, False, False, False, True )
-            TARGET_SHAPE_NAME = "Dome"
-            obj_model_reader.apply_translate( triangles, translate_tris=TARGET_TRANSLATION )
-        else:
-            TARGET_SHAPE_NAME   = os.path.basename(TARGET_SHAPE)
-            triangles           = obj_model_reader.get_all_object_triangles( filename=TARGET_SHAPE, scale=TARGET_SCALE )
-            obj_model_reader.apply_translate( triangles, translate_tris=TARGET_TRANSLATION )
-        TARGET_TRIANGLES        = triangles
-    
-    checkShapeValidity( TARGET_TRIANGLES )
+        # At time of writing (05/2017), the hardcoded dome model's face mappings are not correct;
+        # that model is incomplete. Therefore, we __must__ use the loaded dome from file, in order to evaluate.
+
+        filename = TARGET_SHAPE if TARGET_SHAPE is not None else filename
+        scale = TARGET_SCALE if TARGET_SCALE is not None else dome_scale
+        TARGET_SHAPE_NAME = os.path.basename(TARGET_SHAPE) if TARGET_SHAPE is not None else shape_name
+        triangles = obj_model_reader.get_all_object_triangles(filename=filename, scale=scale)
+        checkShapeValidity( triangles )
+        TARGET_TRIANGLES = triangles
     return TARGET_TRIANGLES, TARGET_SHAPE_NAME
+
+# def get_target_shape_triangles():
+#     global TARGET_TRIANGLES, TARGET_SHAPE, TARGET_SHAPE_NAME
+#     if TARGET_TRIANGLES == None:
+#         if TARGET_SHAPE == None:
+#             #triangles = draw_dome( TARGET_SCALE , False, False, False, False, True )
+#             triangles = obj_model_reader.get_all_object_triangles(filename="../models/dome/dome_c.obj", scale=TARGET_SCALE)
+#             TARGET_SHAPE_NAME = "Dome"
+#             obj_model_reader.apply_translate( triangles, translate_tris=TARGET_TRANSLATION )
+#         else:
+#             TARGET_SHAPE_NAME   = os.path.basename(TARGET_SHAPE)
+#             triangles           = obj_model_reader.get_all_object_triangles( filename=TARGET_SHAPE, scale=TARGET_SCALE )
+#             obj_model_reader.apply_translate( triangles, translate_tris=TARGET_TRANSLATION )
+#         TARGET_TRIANGLES        = triangles
+#
+#     checkShapeValidity( TARGET_TRIANGLES )
+#     return TARGET_TRIANGLES, TARGET_SHAPE_NAME
 
 def load_score_file():
     global BEST_LED_DATA, BEST_LED_DATA_HEADER

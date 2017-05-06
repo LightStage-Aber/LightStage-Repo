@@ -277,7 +277,7 @@ def draw_dome( scale_multiplier =2,
             -- Ready for refactoring... nasty code resides within -- 
         """
         scale = scale_multiplier
-        edges = dome_obj_data.get_dome_edges()
+        edges = dome_obj_data.get_dome_faces()
         vertices = dome_obj_data.get_dome_vertices()
         r = [x[1:]  for x in vertices]
         
