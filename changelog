@@ -1,7 +1,8 @@
 
 
-LightStage_LightPositioning_EvaluationTool v0.1.6 -- 2017/03/29
-----------------------------------------------------------
+LightStage_LightPositioning_EvaluationTool
+------------------------------------------
+
 == PREREQUISITES
 ------------------
     Python2.7.x (5)
@@ -211,9 +212,9 @@ Todo: - Integrate Repulsion by percentage move, via antiprism.
 Todo: - Create test suites for PLOS One paper including new Saff97 (as Geometric) and Repulsion by% with byJitter (as Repulsion).
 Todo: - Create test suites for PLOS One paper with new target models (plant dataset, head/face dataset, sphere).
 
-
 Todo: Planned release: - LightStage_LightPositioning_EvaluationTool v0.1.81 -- 2017/05/
 Todo: - Create test suites for PLOS One paper for Tuning tests.
+Todo: - Refactor - Move dependencies of "Old_ToolSelector" (i.e. luminance evaluation and viewing techniques) from input arguments (and as globals) to properties key-value pairs. Remove capability to set number of LEDs in both locations.
 
 
 LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/04/25
