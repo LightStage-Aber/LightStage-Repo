@@ -2,6 +2,8 @@
 *.pyc
 .~*
 demo/*
+None/*
+None*.csv
 results/*
 !results/lambert_shading_scores/
 !results/blinn-phong+lambert_shading_scores/
