@@ -1,4 +1,5 @@
 #!/bin/bash
+errecho(){ >&2 echo $@; }
 
 # Declare test ranges:
 declare -a range_n=$(seq 3 2 90) #$(seq 3 90)  #e.g. ("44" "45")
@@ -49,6 +50,12 @@ function run_range_test(){
                 for i in $(seq 1 $max_iterations)
                 do
                     ./run_lettvin_diffuse_algorithm.sh "$n" "$j" "$r" "$i" "$result_set"
+                    if [ $? -ne 0 ]; then
+                        errecho ""; errecho " -------------- "
+                        errecho "run_lettvin_diffuse_algorithm.sh failed."
+                        errecho "Exiting."
+                        exit 1;
+                    fi
                 done
             done
         done
