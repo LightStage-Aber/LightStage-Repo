@@ -164,11 +164,11 @@ Options:
                         '-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action.
                         '-e1' =Use Reflectance Measures. 
                         '-e2' = (Disabled) Use Illuminance Measure Monte Carlo Search (Lambertian only). 
-                        '-e3' =Use Illuminance Measure (Lambertian only) to evaluate 'Single' loaded
-                        file; depends on properties file values: see '[EvaluateSingleResultsFile]' 
+                        '-e3' =Use Illuminance Measure (Lambertian only) to evaluate a loaded file containing indexed positions;
+                        depends on properties file values: see '[EvaluateSingleResultsFile]'
                         and '[FrameModel]' - (file, qty, column, etc.) in 'default.properties' file.
-                        '-e4' =Use Illuminance Measure (Lambertian only) to evaluate 'Single Edge(10:3926)' loaded file;
-                        depends on properties file values: see '[EvaluateEdgeMapSingleResultsFile]'
+                        '-e4' =Use Illuminance Measure (Lambertian only) to evaluate a loaded file containing indexed positions;
+                        depends on properties file values: see '[EvaluateSingleResultsFile]'
                         '-e7' =Use Illuminance Measure (Lambertian only) to evaluate 'RAW' vertex 
                         position file; depends on properties file values: see '[LightPositions]'
                         '-e8' =Use Illuminance Measure (Lambertian only) to evaluate 'Vertex
@@ -213,25 +213,26 @@ Todo: - Create test suites for PLOS One paper including new Saff97 (as Geometric
 Todo: - Create test suites for PLOS One paper with new target models (plant dataset, head/face dataset, sphere).
 
 Todo: Planned release: - LightStage_LightPositioning_EvaluationTool v0.1.81 -- 2017/05/
-Todo: - Create test suites for PLOS One paper for Tuning tests.
 Todo: - Refactor - Move dependencies of "Old_ToolSelector" (i.e. luminance evaluation and viewing techniques) from input arguments (and as globals) to properties key-value pairs. Remove capability to set number of LEDs in both locations.
 
 
 LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/04/25
 ---------------------------------------------------------------
 Major changes:
-- Created test suites for PLOS One paper control experiments. Reevaluated Control and Monte Carlo experiment results.
+- Created test suites for PLOS One paper Control,MC,Lettvin experiments. Reevaluated Control and Monte Carlo experiment results.
 - Speed up visualisation with cached loaded (from ~1 FPS to ~30FPS). Added ToolSelector cache class to improve performance / remove requirement of file I/O every frame, (from ~1fps to ~30fps). Further improvements with "modern" opengl implementation (i.e. single glBegin/End batch call).
 - Bug fixed: bug in Edge-point determination/ definition; when support access is enabled, all edges connected to the removed support access vertex are ignored (not created).
 - Bug fixed: ensured correct usage of "loaded OBJ dome model vs hard coded dome model" for target and frame.
+- Added /exp/ directory for integration of external tools.
+- Added Lettvin's Repulsion algorithm (cpp) external tool. Edge10Mappings can be reevaluated with the `run_range_test_lettvin_diffuse.sh` bash script.
+
 Todo: - Add Tuning feature.
-Todo: - Create test suite and reevaluate Repulsion (Lettvin Edge10Mappings).
+Todo: - Create test suites for PLOS One paper for Tuning tests.
 
 Minor changes:
 - Added 'frame.withsupportaccess' (bool) to default.properties file, loaded and used -e3,4,7,8,9.
 - Refactorings and added unit tests.
-- Open issue: The hardcoded dome model has one missing tri on the model, due to the face mappings. The vertex mappings (by AOS 06/2016) to the physical dome are accurate. The missing tri affects the Face-to-Edge algorithm (i.e. Edge10) and evaluations using it as a target model.
-
+- Open issue: The hardcoded dome model has one missing tri on the model. Workaround: Only use loaded .obj models as target model. Do not use the hardcoded dome as a target model; this has been enforced in tool_manager.py->get_target_shape_triangles(). Details: The missing tri face is lost when the .obj faces are remapped. The vertex mappings (by AOS 06/2016) to the physical dome are accurate. The missing tri affects the Face-to-Edge algorithm (i.e. Edge10) and evaluations using it as a target model.
 
     
 LightStage_LightPositioning_EvaluationTool v0.1.7 -- 2017/04/01

@@ -1,23 +1,75 @@
+# ---------------------------------------------------------
+# Ignore common Py and partial files:
+# ---------------------------------------------------------
 *~
 *.pyc
 .~*
-demo/*
-None/*
-None*.csv
-results/*
-!results/lambert_shading_scores/
-!results/blinn-phong+lambert_shading_scores/
-!results/Sample_Lettvin_Results_Mar2017/
-properties/default.properties
-properties/default.properties.*
+
+
+# ---------------------------------------------------------
+# Ignore /src/
+# ---------------------------------------------------------
 src/data_3d/AOSMAPPED_23rdJune2016_dome_obj_data.py
 src/data_3d/AOSMAPPED_GOOD___dome_obj_data.py
 src/data_3d/UNMAPPED_17thJune2016_dome_obj_data.py
 src/data_3d/junk/*
+src/config.py
+src_data_analysis/
+
+
+# ---------------------------------------------------------
+# Ignore /results/
+# ---------------------------------------------------------
+results/*
+!results/lambert_shading_scores/
+!results/blinn-phong+lambert_shading_scores/
+!results/Sample_Lettvin_Results_Mar2017/
+
+
+# ---------------------------------------------------------
+# Ignore /properties
+# ---------------------------------------------------------
+!properties/default.properties
+properties/default.properties.*
+
+
+# ---------------------------------------------------------
+# Ignore /test/     (unit test and plot/tex outputs):
+# ---------------------------------------------------------
 test/test_outputs/*.png
 test/test_outputs/*.pdf
 test/test_outputs/*.tex
 test/test_outputs/*.txt
 test/test_outputs/*.csv
+test/test_outputs/*.py
 test/runner_test_evaluation.py
-test/test_outputs/check_result_correlations.py
+
+
+# ---------------------------------------------------------
+# Ignore /exp/      (experiment outputs, unless explicitly specified):
+# ---------------------------------------------------------
+exp/Lettvin_Repulsion/*
+!exp/Lettvin_Repulsion/*.sh
+exp/Lettvin_Repulsion/cpp/*
+!exp/Lettvin_Repulsion/cpp/
+!exp/Lettvin_Repulsion/cpp/diffuse.cpp
+!exp/Lettvin_Repulsion/cpp/Makefile
+exp/Lettvin_Repulsion/helpers/*
+!exp/Lettvin_Repulsion/helpers/
+!exp/Lettvin_Repulsion/helpers/*.py
+!exp/Lettvin_Repulsion/test_output/
+!exp/Lettvin_Repulsion/test_output/empty
+exp/Lettvin_Repulsion/test_output/Results*
+
+
+# ---------------------------------------------------------
+# Ignore corruptions: (caused by unit test usage of properties and options parsers)
+# ---------------------------------------------------------
+None/*
+None*.csv
+
+
+# ---------------------------------------------------------
+# Ignore /demo/     (videos and presentation content)
+# ---------------------------------------------------------
+demo/*

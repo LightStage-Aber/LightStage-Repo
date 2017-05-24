@@ -102,13 +102,10 @@ class LoadFramePositions(object):
 
         self._frame_indexes_are_important = eval(dict_properties['FrameModel']['frame.indexes_are_important'])
         assert isinstance(self._frame_indexes_are_important, bool), "[FrameModel] frame.indexes_are_important must be of type 'bool'. " \
-                                                              "Found: "+str(type(self._frame_indexes_are_important))
+                                                              "Found: %s" % (str(type(self._frame_indexes_are_important)))
 
-        assert self.__hardcoded_leds is not None and len(self.__hardcoded_leds) > 0, "Number of hardcoded LEDs should be GT 0. Even if not used."
 
     def get_frame(self):
-        # todo: Warning Hardcoded vs loaded frame is not handled. Currently always loaded from file.
-        print("Warning Hardcoded vs loaded frame is not handled. Currently always loaded.")
         if self._frame_indexes_are_important: # Hardcoded / not
             frame = self.get_hardcoded_frame()
         else:
@@ -117,6 +114,8 @@ class LoadFramePositions(object):
         return frame
 
     def get_hardcoded_frame(self):
+        assert self.__hardcoded_leds is not None and len(self.__hardcoded_leds) > 0, \
+                                                    "Number of hardcoded LEDs should be GT 0."
         return self.__hardcoded_leds
 
     def get_file_loaded_frame(self):
@@ -126,6 +125,7 @@ class LoadFramePositions(object):
         # load in frame vertex positions as leds
         frame = read_vertices_objects(self._frame_objfilename)[0]
         apply_scale(frame, scale=self._frame_scale)
+        assert len(frame) > 0, "Frame loaded from .obj file %s" % (str(self._frame_objfilename))
         return frame
 
     def __check_to_apply_support_access(self, frame):
@@ -134,9 +134,12 @@ class LoadFramePositions(object):
         return frame
 
     def __remove_bottom_LED_vertex(self, frame):
-        y_axis = [y for [x, y, z] in frame]
-        lowest_y = y_axis.index(min(y_axis))
-        frame[lowest_y] = None
+        assert frame is not None and len(frame) > 0, "Number of frame LED positions should be GT 0."
+        # Only remove if not yet removed. i.e... all([[1,2],[3,4]]) == True .... alternatively:  all([[1,2],None]) == False
+        if all(frame):
+            y_axis = [y for [x, y, z] in frame]
+            lowest_y = y_axis.index(min(y_axis))
+            frame[lowest_y] = None
         return frame
 
 class LoadEdgeFramePositions(LoadFramePositions):

@@ -4,7 +4,7 @@ import numpy as np
 sys.path.insert(0, default_path)
 
 import unittest
-from run_PLOS_ONE_Article_EXPS_May2017 import GetActual_FromVertex
+from run_PLOS_ONE_Article_Control_MC_EXPS_May2017 import GetActual_FromVertex
 from file_utils import file_io
 
 

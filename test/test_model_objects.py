@@ -2,7 +2,6 @@ default_path = "../src/"
 import sys
 sys.path.insert(0, default_path)
 
-from helpers.test_support_pipe_capture import captured_stdout
 import unittest
 
 from data_3d import obj_model_reader

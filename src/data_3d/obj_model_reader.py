@@ -29,7 +29,7 @@ def get_all_object_triangles( filename, scale ):
     if len(vertices) != max_vertex_index:
         print "ParseWarning: A face's vertex index number is does not match the quantity of read vertices."
         print "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index)
-            
+
     # Parse as Tris:
     for obj in range(len(vertexObjs)):
         vertices = vertexObjs[obj]

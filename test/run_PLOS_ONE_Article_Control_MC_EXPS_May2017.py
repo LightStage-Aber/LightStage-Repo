@@ -9,10 +9,11 @@ from options import getPropertiesFile, get_parsed_commandline_options
 import run
 
 
-class Config:
-    SKIP_SLOW_TESTS = False
+class _Config:
+    SKIP_SLOW_TESTS = True
     SKIP_CONTROL_TESTS = False
     SKIP_MONTE_CARLO_TESTS = False
+    DEBUG = False
 
 class SetupEvaluator:
 
@@ -21,6 +22,7 @@ class SetupEvaluator:
         PARSE_OPTIONS.EVALUATION = m
         PARSE_OPTIONS.EVALUATION_METRIC_MODE = e
         PARSE_OPTIONS.TARGET_SHAPE = "../models/dome/dome_c.obj"
+        PARSE_OPTIONS.TARGET_SCALE = 1
 
     def execute_get_first_match_from_stdout(self, match):
         with captured_stdout() as stdout:
@@ -35,10 +37,10 @@ class SetupEvaluator:
         return res
 
 
-class SetupEvaluateSingleResultsFile(SetupEvaluator):
+class Setup_FromIndex_Evaluator(SetupEvaluator):
 
-    def properties(self, output_path_prefix, result_filename, number_of_leds, indexes_are_important_HCD, use_support_access):
-        getPropertiesFile("../properties/default.properties")['EvaluateSingleResultsFile']['results_file.csvfilename'] = result_filename
+    def properties(self, output_path_prefix, input_filename, number_of_leds, indexes_are_important_HCD, use_support_access):
+        getPropertiesFile("../properties/default.properties")['EvaluateSingleResultsFile']['results_file.csvfilename'] = input_filename
         getPropertiesFile("../properties/default.properties")['EvaluateSingleResultsFile']['results_file.results_output_file_path_prefix'] = output_path_prefix
         getPropertiesFile("../properties/default.properties")['EvaluateSingleResultsFile']['results_file.column_number'] = 3
         getPropertiesFile("../properties/default.properties")['EvaluateSingleResultsFile']['results_file.number_of_leds'] = number_of_leds
@@ -46,90 +48,109 @@ class SetupEvaluateSingleResultsFile(SetupEvaluator):
         getPropertiesFile("../properties/default.properties")['FrameModel']['frame.withsupportaccess'] = use_support_access
         getPropertiesFile("../properties/default.properties")['FrameModel']['frame.indexes_are_important'] = indexes_are_important_HCD
 
-class GetActual(object):
-    def __init__(self):
+
+class Setup_FromVertex_Evaluator(SetupEvaluator):
+
+    def properties(self, output_path_prefix, input_filename, number_of_leds, indexes_are_important_HCD, use_support_access):
+        getPropertiesFile("../properties/default.properties")['LightPositions']['light.objfilename'] = input_filename
+        getPropertiesFile("../properties/default.properties")['LightPositions']['light.results_output_file_path_prefix'] = output_path_prefix
+        getPropertiesFile("../properties/default.properties")['LightPositions']['light.scale'] = 8
+
+        getPropertiesFile("../properties/default.properties")['FrameModel']['frame.withsupportaccess'] = use_support_access
+        getPropertiesFile("../properties/default.properties")['FrameModel']['frame.indexes_are_important'] = indexes_are_important_HCD
+
+
+class GetActual_FromVertex(object):
+    def __init__(self, *args, **kwords):
         self._test_output_path  = None
         self._file_path         = None
+        self._setup = Setup_FromVertex_Evaluator()
 
     def _get_actual(self, m=None, e=None, filename=None, n=None, indexes_are_important=None, support_access=None):
-        x = SetupEvaluateSingleResultsFile()
-        x.options(
+        self._setup.options(
             m=m,
             e=e
         )
-        x.properties(
+        self._setup.properties(
             output_path_prefix=  self._test_output_path,
-            result_filename= self._file_path +str(filename),
+            input_filename=self._file_path + str(filename),
             number_of_leds=n,
             indexes_are_important_HCD=str(indexes_are_important),
             use_support_access=str(support_access)
         )
-        actual = x.execute_get_first_match_from_stdout("Finished with normalised standard deviation:")
+        actual = self._setup.execute_get_first_match_from_stdout("Finished with normalised standard deviation:")
+        if _Config.DEBUG:
+            print actual
         return float(actual)
 
 
-class PLOSOneEXP(unittest.TestCase, GetActual):
+class GetActual_FromIndex(GetActual_FromVertex):
+    def __init__(self):
+        self._test_output_path  = None
+        self._file_path         = None
+        self._setup = Setup_FromIndex_Evaluator()
+
+
+class PLOSOneEXP_Controls(unittest.TestCase, GetActual_FromIndex):
 
     def __init__(self, *args, **kwords):
         unittest.TestCase.__init__(self, *args, **kwords)
-        GetActual.__init__(self)
+        GetActual_FromIndex.__init__(self)
         self._test_output_path  = "test/test_outputs/"
         self._file_path         = "../results/Control_91-92_March2017/"
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_VAcc(self):
         actual = self._get_actual(m=2, e=3, filename="l91.csv", n=91, indexes_are_important=True, support_access=True)
         expected = 0.00340693210971
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_VNoAcc(self):
         actual = self._get_actual(m=2, e=3, filename="l92.csv", n=92, indexes_are_important=True, support_access=False)
-        #print(actual)
-        #sys.exit()
         expected = 0.000708533321995
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_OddNoAcc(self):
         actual = self._get_actual(m=2, e=3, filename="odds.csv", n=46, indexes_are_important=True, support_access=False)
         expected = 0.00429237121612
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_OddAcc(self):
         actual = self._get_actual(m=2, e=3, filename="odds44.csv", n=44, indexes_are_important=True, support_access=False)
         expected = 0.00762615128411
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_EvenNoAcc(self):
         actual = self._get_actual(m=2, e=3, filename="evens.csv", n=46, indexes_are_important=True, support_access=False)
         expected = 0.00429237121612
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
     def test_control_EvenAcc(self):
         actual = self._get_actual(m=2, e=3, filename="evens44.csv", n=44, indexes_are_important=True, support_access=False)
         expected = 0.00762615128411
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
-    @unittest.skipIf(Config.SKIP_SLOW_TESTS, "Skipping slow test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_SLOW_TESTS, "Skipping slow test..")
     def test_control_E10Acc(self):
         actual = self._get_actual(m=2, e=4, filename="edges_l3893.csv", n=3893, indexes_are_important=False, support_access=True)
         expected = 0.0116138656448
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_CONTROL_TESTS, "Skipping control test..")
-    @unittest.skipIf(Config.SKIP_SLOW_TESTS, "Skipping slow test..")
+    @unittest.skipIf(_Config.SKIP_CONTROL_TESTS, "Skipping control test..")
+    @unittest.skipIf(_Config.SKIP_SLOW_TESTS, "Skipping slow test..")
     def test_control_E10NoAcc(self):
         actual = self._get_actual(m=2, e=4, filename="edges_l3991.csv", n=3991, indexes_are_important=False, support_access=False)
         expected = 0.00655570792577
@@ -137,21 +158,21 @@ class PLOSOneEXP(unittest.TestCase, GetActual):
         return actual
 
 
-class PLOSOneEXP_MonteCarlo(unittest.TestCase, GetActual):
+class PLOSOneEXP_MonteCarlo(unittest.TestCase, GetActual_FromIndex):
 
     def __init__(self, *args, **kwords):
         unittest.TestCase.__init__(self, *args, **kwords)
-        GetActual.__init__(self)
+        GetActual_FromIndex.__init__(self)
         self._file_path = "../results/installed_aos+rod_July2016/"
 
-    @unittest.skipIf(Config.SKIP_MONTE_CARLO_TESTS, "Skipping monte carlo test..")
+    @unittest.skipIf(_Config.SKIP_MONTE_CARLO_TESTS, "Skipping monte carlo test..")
     def test_monte_carlo_Inst(self):
         actual = self._get_actual(m=2, e=3, filename="installed.csv", n=44, indexes_are_important=True, support_access=False)
         expected = 0.00591398315505
         self.assertTrue(actual == expected)
         return actual
 
-    @unittest.skipIf(Config.SKIP_MONTE_CARLO_TESTS, "Skipping monte carlo test..")
+    @unittest.skipIf(_Config.SKIP_MONTE_CARLO_TESTS, "Skipping monte carlo test..")
     def test_monte_carlo_Twkr(self):
         actual = self._get_actual(m=2, e=3, filename="tweaker.csv", n=44, indexes_are_important=True, support_access=False)
         expected = 0.00460301483137

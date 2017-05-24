@@ -249,6 +249,7 @@ class OpenGLRunner(object):
 class LightStageApp(object):
 
     def __init__(self):
+        tool_managers.define_help()
         self.__input_handler = OpenGLInputHandler()
         self.__keyEvents = self.__input_handler.keyEvents
         self.__updateable_line = self.__input_handler.updateable_line
