@@ -24,6 +24,11 @@ results/*
 !results/lambert_shading_scores/
 !results/blinn-phong+lambert_shading_scores/
 !results/Sample_Lettvin_Results_Mar2017/
+results/Control_91-92_March2017/*
+!results/Control_91-92_March2017/*.csv
+results/Control_91-92_March2017/*.txt.csv
+results/Control_91-92_March2017/lam*.csv
+!results/Control_91-92_March2017/
 
 
 # ---------------------------------------------------------
