@@ -23,7 +23,8 @@
         Then install as:        pip install path/to/download/PyOpenGL-3.1.1b1-cp27-none-win_XXXXX.whl
 
     To install PyOpenGL on Linux (Ubuntu/ Debian):
-        sudo apt-get install python2.7 python-opengl numpy
+        sudo apt-get install python2.7 python-opengl 
+        sudo pip install numpy
 
     
 #### USAGE EXAMPLES:
