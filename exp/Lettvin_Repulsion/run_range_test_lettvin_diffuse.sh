@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# -- Run as: ./run_range_test_lettvin_diffuse.sh 1> test_output/stdout.txt 2> test_output/stderr.txt
+#
 errecho(){ >&2 echo $@; }
 
 # Declare test ranges:
