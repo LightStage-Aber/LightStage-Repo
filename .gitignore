@@ -29,7 +29,10 @@ results/Control_91-92_March2017/*
 results/Control_91-92_March2017/*.txt.csv
 results/Control_91-92_March2017/lam*.csv
 !results/Control_91-92_March2017/
-
+results/installed_aos+rod_July2016/*
+!results/installed_aos+rod_July2016/*.csv
+results/installed_aos+rod_July2016/lam*.csv
+!results/installed_aos+rod_July2016/
 
 # ---------------------------------------------------------
 # Ignore /properties
