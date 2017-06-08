@@ -14,20 +14,22 @@
 
 
 #### PREREQUISITES
-    Python2.7.x (5)
+    Python2.7.x (5,12)
     PyOpenGL
     numpy
+    scipy
     
     To install PyOpenGL on Windows:
         First download:         PyOpenGL version '3.1.1b1-cp27' as x64 or x86 from http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
         Then install as:        pip install path/to/download/PyOpenGL-3.1.1b1-cp27-none-win_XXXXX.whl
 
     To install PyOpenGL on Linux (Ubuntu/ Debian):
-        sudo apt-get install python2.7 python-opengl 
-        sudo pip install numpy
+        sudo apt-get install python2.7 python-opengl python-pip
+        sudo pip install numpy scipy
 
     
 #### USAGE EXAMPLES:
+    cd src/
     python run.py
         Run in display mode, with default mini-dome, default camera layout and default required LEDs.
 
@@ -51,6 +53,6 @@
     Use mouse to drag and zoom view of object.
     Use spacebar to stop/start display rotation.
     
-    
+
 #### See Changelog for more detailed usage and information.
 
