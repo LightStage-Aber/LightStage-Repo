@@ -32,7 +32,6 @@
         sudo pip install numpy scipy
 
 
-
 #### USAGE EXAMPLES:
     cd src/
     python run.py
@@ -59,6 +58,6 @@
     Use mouse to drag and zoom view of object.
     Use spacebar to stop/start display rotation.
     
-    
+
 #### See Changelog for more detailed usage and information.
 

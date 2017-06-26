@@ -5,7 +5,7 @@
 errecho(){ >&2 echo $@; }
 
 # Declare test ranges:
-declare -a range_n=$(seq 3 2 90) #$(seq 3 90)  #e.g. ("44" "45")
+declare -a range_n=$(seq 4 2 90) #$(seq 3 90)  #e.g. ("44" "45")
 declare -a range_j=("0.001" "0.0001" "0.00001" "0.000001" "0.0000001")
 declare -a range_r=("0")
 max_iterations=50
