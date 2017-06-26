@@ -3,31 +3,19 @@
 LightStage_LightPositioning_EvaluationTool
 ------------------------------------------
 
-== PREREQUISITES
-------------------
-    Python2.7.x (5)
-    PyOpenGL
-    numpy
-    
-    To install PyOpenGL on Windows:
-        First download:         PyOpenGL version '3.1.1b1-cp27' as x64 or x86 from http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
-        Then install as:        pip install path/to/download/PyOpenGL-3.1.1b1-cp27-none-win_XXXXX.whl
 
-    To install PyOpenGL on Linux (Ubuntu/ Debian):
-        sudo apt-get install python2.7 python-opengl numpy
-
-    Note the 'pip' and 'easy_install' Python packages for PyOpenGL are incompatible with this project code, as tested on Windows 7 and Ubuntu 14.04 (2016/03/08).
-    
-    
 == FILES:
 -----------
     /src                                    - Code.
+    /test                                   - Unit tests for src/ code.
     /models                                 - Sample 3D obj model files.
-    /results                                - Example scoring result data files.
+    /results                                - Example scoring result data files and example input .csv/.obj files.
     /properties								- Configuration file to simplify running of experiments; in particular with command line options: -e3 through to -e9.
-    
-    
-== USAGE EXAMPLES:
+    /exp                                    - Experiment scipts, i.e. for particle replusion position testing
+
+
+
+== DEMO USAGE EXAMPLES:
 -------------------
     python run.py -h
         Displays options on command line.
@@ -46,66 +34,163 @@ LightStage_LightPositioning_EvaluationTool
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
         Loads result data file (-r) for the plant3 model: ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
 
-    python run.py -m 2 
-        Run in evaluation mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
+
+
+== EVALUATION USAGE EXAMPLES USING ILLUMINANCE:
+-----------------------------------------------
+
+    This is for evaluating LED positions by the amount of light absorbed by each surface of the target object model.
+    This type of evaluation is not affected by surface materials.
+    To visually see what will be evaluated, use both the -m1 and -eX command line options. Then to evaluate that (recreated) scene, use -m2 -eX.
+    
+    == Evaluate Index Positions: (-e3 / -e4)
+
+    python run.py -m 2 -e 3
+        Run in evaluation mode (-m), using positions loaded from an CSV index file (-e) and expecting those indexes to correlate to the 92 joints of the geodesic dome (-e3).
+        Alternatively, run with (-e4) where the expected indexes will correlate to 3991 positions on the bars connecting the joints of the geodesic dome.
+        Requires configuration value in 'properties/default.properties' file:
+        - Under the [LightIndexPositions] section, as:
+            - results_file.column_number=3
+                - This is the column index of the CSV file. A cell value of '1' or 'True' is considered selected.
+            - results_file.number_of_leds=44
+                - This is the number of LEDs expected, and limits the selected LEDs up to this number.
+            - results_file.results_output_file_path_prefix=results/Control_91-92_March2017/
+                - This is the output directory for the evaluation results, written to a file in CSV format.
+                - For -e3 the output filename is 'lambertian_led_sets_VertexIndexPositionEvaluator.csv'
+                - For -e4 the output filename is 'lambertian_led_sets_Edge10IndexPositionEvaluator.csv'
+            - results_file.csvfilename=../results/Control_91-92_March2017/l92.csv
+                - This is the input CSV file from which the indexes will be read.
+        - Under the [FrameModel] section, as:
+            - frame.objfilename=../models/dome/dome_c.obj
+                - This is the frame model, to which the index position are mapped.
+            - frame.scale=8
+                - This is the scale of the frame model, relative to the target model.
+            - frame.withsupportaccess=True
+                - This determines if the lowest joint of the geodesic dome is removed, i.e. an opening to access the inside of the dome.
+            - frame.indexes_are_important=False
+                - This applies a number mapping to the joints, as used in AU's actual dome (06/2016). Must be False used when mappings to bars are used.
+        This takes from 1 to 180+ seconds for evaluation depending on number of LEDs and number of surfaces of target model.
+        By example, 44 LEDs and the default dome model with 180 surfaces, takes 1-2 seconds.
+
+
+    == Evaluate 3d Coordinate Positions from .obj file format: (-e7, -e8, -e9)
+
+    python run.py -m 2 -e 7
+        Run in evaluation mode (-m), using positions loaded from an .obj file.
+        Use (-e7) to evaluate the 'Raw' positions from loaded 3d coordinates to the target model.
+        Use (-e8) to evaluate the 'VertexMapped' positions, where each of the loaded 3d coordinates are mapped to the closest of 92 dome frame joint (vertex) based on distance using Euclidean distance.
+        Use (-e9) to evaluate the 'VertexMapped' positions, where each of the loaded 3d coordinates are mapped to the closest of 3991 dome frame positions on the bar between joint (Edge10) based on distance using Euclidean distance.
+        Requires configuration value in 'properties/default.properties' file:
+        - Under the [LightPositions] section, as:
+            - light.results_output_file_path_prefix=results/Sample_Lettvin_Results_Mar2017/
+                - This is the output directory for the evaluation results, written to a file in CSV format.
+                - For -e7 the output filename is 'lambertian_led_sets_RawPositionEvaluator.csv'
+                - For -e8 the output filename is 'lambertian_led_sets_VertexMappedPositionEvaluator.csv'
+                - For -e9 the output filename is 'lambertian_led_sets_Edge10MappedPositionEvaluator.csv'
+            - light.scale=8
+                - This is the scale of the light model vertex positions, and will be relative to the target model.
+            - light.objfilename=../results/Sample_Lettvin_Results_Mar2017/test_tuning_n7_j0-001.txt.obj
+                - This is the input .OBJ file from which the vertex positions ('v x y z') will be read.
+        - Under the [FrameModel] section, as:
+            - frame.objfilename=../models/dome/dome_c.obj
+                - This is the frame model, to which the index position are mapped.
+            - frame.scale=8
+                - This is the scale of the frame model, relative to the target model.
+            - frame.withsupportaccess=True
+                - This determines if the lowest joint of the geodesic dome is removed, i.e. an opening to access the inside of the dome.
+            - frame.indexes_are_important=False
+                - This applies a number mapping to the joints, as used in AU's actual dome (06/2016). Must be False used when mappings to bars are used.
+        This takes from 1 to 180+ seconds for evaluation depending on number of LEDs and number of surfaces of target model.
+        By example, 44 LEDs and the default dome model with 180 surfaces, takes 1-2 seconds.
+
+
+
+== EVALUATION USAGE EXAMPLES USING LUMINANCE:
+---------------------------------------------
+
+    This is for viewing and evaluating LED positions by the amount of light reflected to the camera positions.
+    To visually see what will be evaluated, use both the -m1 and -eX command line options. Then to evaluate that (recreated) scene, use -m2 -eX.
+
+    python run.py -m 2 -e 1
+        Run in evaluation mode (-m) to measure reflectance (-e1), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
         This took 75 seconds, during testing.
         Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
         Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
 
-    python run.py -m 2 -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
-        Run in evaluation mode (-m), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
+    python run.py -m 2 -e1 -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)'
+        Run in evaluation mode (-m) to measure reflectance (-e1), with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis.
         This took 83 minutes to run. Default is 'realistic bias' camera layout (-c), with 42 LEDs required (-l).
         Created information file: ../led_meta_data_YYYY-MM-DD-hh-mm-ss.txt
         Created result data file: ../led_scores_YYYY-MM-DD-hh-mm-ss.csv
-    
-
-== WHAT ARE THE KEYBOARD/MOUSE CONTROLS?:
-------------------------------------------
-
-    Press F1, see the console print outs.
-    Use 'mouse' to drag and zoom view of object.
-    Use 'space' to stop/start display rotation.
-    
-
-== WHAT DOES THIS PROGRAM DO?:
-------------------------------
-
-    (1) EVALUATES the illumination of a simulated object inside a LightStageV3.
-    (2) DISPLAYS the resulting configuration(s) of LEDs that produce the best illumination of that object. 
-    - These evaluations are based on two metrics that use the Lambertian diffuse and Blinn-Phong specular reflectance models.
 
 
+    These are for viewing LED positions, loaded from a luminance result file:
 
-== WHAT ARE THE PROGRAM MODES?:
-------------------------------
-    
-    == DISPLAY MODE (Default):
-        - Command line option (-m 1).
-        - By default, we load a mini-dome and LED positions from a result data file '../led_scores.csv'.
-        - In Display Mode, press F1 to view the runtime config options, such as key/mouse controls.
-            - 'l' to load a new result data file.
-            - 'r' to change between the data file's LED scoring measures.
-                - (1) ranked maximised intensity. LEDs are selected during Display Mode runtime, based on rank. 
-                      Use +/- to change the quantity of ranked LEDs displayed.
-                - (2) minimised coverage error, default of 42 LEDs is set. 
-                      LEDs displayed under this scoring have been selected during the Evaluation Mode run.
-    
+    python run.py -p "../models/dome/dome_c.obj" -s 2 -t '(0,0,0)' -l 41 -r ../results/blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
+        Run in display mode, with the dome from its obj file (-p), scaled (-s) by 2, not moved (-t), with 41 leds (-l) selected.
+        Loads result data file (-r) for the dome model: ../blinn-phong+lambert_shading_scores/dome_realistic_cam/led_scores_2016-01-08-21-16-06.csv
+
+    python run.py -p "../models/Flower/plants3.obj" -s 0.01 -t '(0,-4,0)' -r ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
+        Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
+        Loads result data file (-r) for the plant3 model: ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
+
+    When loading a luminance result file (as above), press F1 to view the hotkeys:
+        - 'l' to load a new result data file.
+        - 'r' to change between the data file's LED scoring measures.
+            - (1) ranked maximised intensity. LEDs are selected during Display Mode runtime, based on rank.
+                  Use +/- to change the quantity of ranked LEDs displayed.
+            - (2) minimised coverage error, default of 42 LEDs is set.
+                  LEDs displayed under this scoring have been selected during the Evaluation Mode run.
+
+
+
+
+== BRIGHTNESS CONTROL TUNING USAGE EXAMPLE USING ILLUMINANCE:
+-------------------------------------------------------------
+
+    This provides a search to improve the evaluation score of a given set of LED positions, by adjusting the brightness of each LED.
+    The (-m2) evaluation step will produce the default brightness intensities per LED position as (1,1,1,1,1,1, etc.), these will be used as the initial search starting point.
+    Starting a brightness control tuning search will tune or update the intensity values, such that the normalised standard deviation illuminance measure improves (reduces).
+    The output of the search will be adjusted brightness values per LED (e.g. 1.1,1.0,1.0,0.9,0.8,0.8,0.9,1.0,1.0,1.1, etc.).
+    To visually see the positions that will be evaluated, use both the -m1 and -eX command line options. Then to tune that (recreated) scene, use -m3 -eX.
+
+    python run.py -m 3 -e 7
+        Run in brightness control tuning mode (-e7) using positions loaded from an .obj file. Any of the evaluations modes above (3,4,7,8,9) can be used here.
+        The tuning must evaluate using the same method as -m2. Therefore it's configuration must be correct. Equally, -m1 to demo the configuration will help show if the configuration is visually accurate.
+        Requires configuration in 'properties/default.properties' file:
+        - Under the [BrightnessControlTuner] section, as:
+            - tune.debug=True
+                - This will print out debug information to STDOUT showing progress through-out the tuning search, as control level. Each search strategy has it's own debug statements.
+            - tune.mode="L-BFGS-B"
+                - The mode determines which search strategy is used. "L-BFGS-B" is a global scipy search. "IterativeRegression" is a local (faster) numeric optimisation search.
+        - "IterativeRegression" strategy has the following parameters:
+            - tune.regression.threshold=0.0005
+                - The stopping evaluation score threshold.
+            - tune.regression.max_iterations=1000
+                - The maximum iterations of regression to complete, if stopping threshold is not exceeded.
+            - tune.regression.debug=False
+                - Print out progress and evaluation scores as search progresses.
+        - "L-BFGS-B" strategy has the following parameters. See the scipy.optimize.basinhopping documentation for details.
+            - tune.scipy.basinhopping.niter=0
+            - tune.scipy.basinhopping.niter_success=1
+            - tune.scipy.basinhopping.t=0.5
+                - See parameter 'T'.
+            - tune.scipy.basinhopping.disp=False
+            - tune.scipy.basinhopping.lower_bounds=0.5
+                - The lower bound for brightness lumens, applied for all LEDs. 1.0 is the relative and default lumen level.
+            - tune.scipy.basinhopping.upper_bounds=1.5
+                - The upper bound for brightness lumens, applied for all LEDs.
+
+
+
+== FURTHER INFORMATION ON LUMINANCE EVALUATION MODES (Temporarily disabled feature in v0.1.8):
+----------------------------------------------------------------------------------------------
+
     == EVALUATION MODE:
-        - Command line option (-m 2).
-        - This mode will execute evaluations of the given experiment (-e) type. 
-        - To visually see what will be evaluated, use both the -m1 and -eX command line options. Then to evaluate that (recreated) scene, use -m2 -eX.
-        - Option: (-m2 -e3 or 4)
-        	- Evaluate the lambertian diffuse illuminance score of a set of index points read from an .csv results file and mapped to the internal dome's vertices by index, configuration set in /properties/default.properties.
-		- Option: (-m2 -e7,8 or 9)
-        	- Evaluate the lambertian diffuse illuminance score of a set of vertex points read from an .obj file, configuration set in /properties/default.properties.
-        	- For evaluation of the raw vertex points loaded from the .obj file, use -e7.
-        	- For mappings to the dome's closest (Euclidean dist) vertex point, use -e8.
-        	- For mappings to the dome's closest (Euclidean dist) edge (of approx 10 points per edge), use -e9.
-        	- Each will write out CSV results (including surface illuminations) to a csv file in a directory specified in default.properties.
         - Option: (-m2 -e2)
 		    - This mode will evaluate and log results to file evaluating ray reflection intensities into the observing cameras.
 		    - For a simple target model with 180 triangle it took 1.5 minutes to evaluate.
-		    - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt' 
+		    - The result data file and meta data files are stored in '../led_scores_<timestamp>.csv' and '../led_meta_data_<timestamp>.txt'
 		    - The evalution depends on:
 		        - camera positions
 		        - 6 rotations of the target model within the LightStage.
@@ -113,42 +198,20 @@ LightStage_LightPositioning_EvaluationTool
 		        - target model, positioning (scale and translation inside dome)
 		    - *We recommended that the camera layout and model positioning be set and previewed in the Display Mode before running in Evaluation Mode.*
 		    - The evaluation measures:
-		        - the light intensity score measure, uses Lambertian and Blinn-Phong reflection models to accumulate diffuse and specular 
+		        - the light intensity score measure, uses Lambertian and Blinn-Phong reflection models to accumulate diffuse and specular
 		          reflection intensities per tri, per LED.
-		        - the coverage error scoring measure, minimises the quantity of unlit target model triangle surfaces. This is done by 
-		          prioritising LEDs that are alone in lighting a tri surface, followed by prioritising LEDs that have a high 
-		          AccumIntensity * QtyTriHit score. With a limited search step and search depth, the best scoring set of LEDs are recorded, 
-		          of quantity (-l). 
+		        - the coverage error scoring measure, minimises the quantity of unlit target model triangle surfaces. This is done by
+		          prioritising LEDs that are alone in lighting a tri surface, followed by prioritising LEDs that have a high
+		          AccumIntensity * QtyTriHit score. With a limited search step and search depth, the best scoring set of LEDs are recorded,
+		          of quantity (-l).
 		          + AccumIntensity is the reflection intensity score per LED per tri of the target model, accumulated over the quantity of target model rotations.
 		          + QtyTriHit is the quantity of tris of the target model that are lit by the LED, accumulated over the quantity of target model rotations.
 
-    == TUNING EVALUATION MODE:
-        - Command line option (-m 3).
-            - An extension of (-m2) evaluation mode.
-            - This mode will tune (search for the best) LED position intensities values.
-            - Always use together with (-e), the given experiment type.
-        - Execute a search algorithm to "tune" (update) the intensity values, such that the normalised standard deviation measure improves.
-            - To visually see the scene and which light positions will be evaluated, use both the -m1 and -eX command line options.
-            - Run the intensity tuning search on a (recreated) scene, use -m3 -eX.
-            - Note, that the (-m2) evaluation step will produce the un-tuned intensities per LED position as (1,1,1,1,1,1, etc.).
-        - Choose the Search Algorithm and its parameters:
-            - See ./properties/default.properties file, under the [Tune] section:
-            - Option: "tune.mode=1"
-                - Execute a search using scipy.optimize.basinhopping.
-                - Method = L-BFGS-B, Intensity bounds are between 1.0 and 2.0 for all intensities.
-            - Option: "tune.mode=2"
-                - Execute an iterative regression, targetting the intensities with greatest surface z-scores.
-                - tune.regression.threshold=0.005 [Range: >=0]
-                - tune.regression.max_iterations=100 [Range: >=1]
-            - Other search algorithms options may be added later.
-        - Option: (-m3 -e3)
-             - Untested.
-        - Option: (-m3 -e7)
-             - Untested.
-        - Option: (-m3 -e8 or 9)
-             - Map the equally distributed positions (as -m1 or -m2 -e8/9).
-        - Option: (-m3 -e2)
-             - Untested.
+
+
+
+=== COMMAND LINE HELP OUTPUT:
+-----------------------------
 
 $ python run.py -h
 Usage: run.py [options]
@@ -163,7 +226,7 @@ Options:
                         Specify the evaluation metric mode.
                         '-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action.
                         '-e1' =Use Reflectance Measures. 
-                        '-e2' = (Disabled) Use Illuminance Measure Monte Carlo Search (Lambertian only). 
+                        '-e2' = (Disabled) Use Illuminance Measure Monte Carlo Search (Lambertian only).
                         '-e3' =Use Illuminance Measure (Lambertian only) to evaluate a loaded file containing indexed positions;
                         depends on properties file values: see '[EvaluateSingleResultsFile]'
                         and '[FrameModel]' - (file, qty, column, etc.) in 'default.properties' file.
@@ -188,8 +251,8 @@ Options:
                         2=Even bias.
   -l NUM, --qty-leds=NUM
                         Specify the number of LEDs to show in demo and to
-                        evaluate in range(0-92). Default is 44. *Note: This
-                        value is not currently recalled from any results
+                        evaluate in luminance mode, in range(0-92). Default is 44.
+                        *Note: This value is not currently recalled from any results
                         files.*
   -r PATH, --load-result-file=PATH
                         Specify the path to an LED score result data file. For
@@ -206,6 +269,12 @@ Options:
 
 
 
+
+
+============================
+=== CHANGE LOG HISTORY:
+============================
+
 Todo: Planned release: LightStage_LightPositioning_EvaluationTool v0.1.82 -- 2017/05/
 Todo: - Integrate Saff97 spheres, via antiprism.
 Todo: - Integrate Repulsion by percentage move, via antiprism.
@@ -216,23 +285,48 @@ Todo: Planned release: - LightStage_LightPositioning_EvaluationTool v0.1.81 -- 2
 Todo: - Refactor - Move dependencies of "Old_ToolSelector" (i.e. luminance evaluation and viewing techniques) from input arguments (and as globals) to properties key-value pairs. Remove capability to set number of LEDs in both locations.
 
 
-LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/04/25
----------------------------------------------------------------
-Major changes:
+LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/06/26 - (2017/04/25)
+------------------------------------------------------------------------------
+Major additions:
 - Created test suites for PLOS One paper Control,MC,Lettvin experiments. Reevaluated Control and Monte Carlo experiment results.
-- Speed up visualisation with cached loaded (from ~1 FPS to ~30FPS). Added ToolSelector cache class to improve performance / remove requirement of file I/O every frame, (from ~1fps to ~30fps). Further improvements with "modern" opengl implementation (i.e. single glBegin/End batch call).
-- Bug fixed: bug in Edge-point determination/ definition; when support access is enabled, all edges connected to the removed support access vertex are ignored (not created).
-- Bug fixed: ensured correct usage of "loaded OBJ dome model vs hard coded dome model" for target and frame.
 - Added /exp/ directory for integration of external tools.
 - Added Lettvin's Repulsion algorithm (cpp) external tool. Edge10Mappings can be reevaluated with the `run_range_test_lettvin_diffuse.sh` bash script.
+- Added 'Brightness Control Tuning' feature. Has two search tools: a local (numerical) iterative regression ("IterativeRegression") and a scipy.basinhopping global minimization search ("L-BFGS-B"). The search "mode" type and associated parameters can be specified in properties/default.properties config file.
+- Created test suites for tuning tests - showing that balance evaluation score is reduced by the search.
+- Created test suites for tuning installed (MonteCarlo) positions - showing that Monte Carlo positions can be improved by tuning.
 
-Todo: - Add Tuning feature.
-Todo: - Create test suites for PLOS One paper for Tuning tests.
+Major changes:
+- Refactorings from procedural to object oriented paradigm. This was done to support code state correctness and flexibility under repeat testing while properties configurations are affected per unit test of the same suite.
+- Sped up visualisation with cached loaded (from ~1 FPS to ~30FPS). Added ToolSelector cache class to improve performance / remove requirement of file I/O every frame, (from ~1fps to ~30fps). Further improvements with "modern" opengl implementation (i.e. single glBegin/End batch call).
+- Bug fixed: bug in Edge-point determination/ definition; when support access is enabled, all edges connected to the removed support access vertex are ignored (not created).
+- Bug fixed: ensured correct usage of "loaded OBJ dome model vs hard coded dome model" for target and frame.
+- Simplified the default.properties structure into:
+    - [LightPositions] for vertex-based .obj files, (-e7,8,9)
+    - [LightIndexPositions] for index based .csv files, (-e3,4)
+    - [FrameModel] for the geodesic frame model
+    - [BrightnessControlTuner] for tuning method type and parameters (-m3)
+- Added 'frame.withsupportaccess' (bool) to default.properties file, loaded and used -e3,4,7,8,9. Which will remove the bottom (lowest Y-axis vertex) of the frame.
+- Documenting here - 'frame.indexes_are_important' (bool) for default.properties file.
+    - If true, use the mapped numbering system defined in 'src/data_3d/dome_obj_data.py' to associate vertex position indexes to the 0 to 91 vertex positions.
+    - Must be 'False' for any Edge mappings (to points on the bar) because the mapped numberings only reach 92 positions, not 3991.
+    - Optional for Raw 3d point to mapped Vertex Mappings.
 
 Minor changes:
-- Added 'frame.withsupportaccess' (bool) to default.properties file, loaded and used -e3,4,7,8,9.
-- Refactorings and added unit tests.
-- Open issue: The hardcoded dome model has one missing tri on the model. Workaround: Only use loaded .obj models as target model. Do not use the hardcoded dome as a target model; this has been enforced in tool_manager.py->get_target_shape_triangles(). Details: The missing tri face is lost when the .obj faces are remapped. The vertex mappings (by AOS 06/2016) to the physical dome are accurate. The missing tri affects the Face-to-Edge algorithm (i.e. Edge10) and evaluations using it as a target model.
+- Added cached objects and added unit tests that depend on STDOUT.
+- Open issue: The hardcoded dome model (in 'src/data_3d/dome_obj_data.py') has one missing tri on the model.
+    - Workaround: Only use loaded .obj models as target model. (loaded via -p)
+    - Do not use the hardcoded dome as a target model.
+        - This has been enforced in tool_manager.py->get_target_shape_triangles().
+        - Details:
+            - The missing tri face is lost when the .obj faces are remapped.
+            - The vertex mappings (by AOS 06/2016) to the physical dome are accurate.
+            - The missing tri affects the Face-to-Edge algorithm (i.e. Edge10) and evaluations using it as a target model.
+- Restructured /modes/ directory modules into:
+    - /luminance/ for original evaluation tools based on reflections into camera positions (old)
+    - /illuminance/ for current evaluation tools based on lumens into target surfaces.
+    - /brightness_control_tunings/ for search code strategies.
+
+
 
     
 LightStage_LightPositioning_EvaluationTool v0.1.7 -- 2017/04/01

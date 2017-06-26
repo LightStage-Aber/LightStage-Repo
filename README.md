@@ -4,30 +4,37 @@
 
 #### WHAT DOES THIS PROGRAM DO?:
 
-    (1) EVALUATES the illumination of a simulated object inside a LightStageV3.
-    (2) DISPLAYS the resulting configuration(s) of LEDs that produce the best illumination of that object. 
-    - These evaluations are based on two metrics that use the Lambertian diffuse and Blinn-Phong specular reflectance models.
-    
+    (1) EVALUATES the LED lighting positions for a simulated object inside a LightStageV3 geodesic dome.
+        - Produces a score for 'lighting balance' (or evenness) for either a predefined set of positions or based on a searched set of positions.
+        - Uses illuminance or luminance models to evaluate lighting balance.
+        - The Illuminance model evaluations are based on the angle of incidence (i.e. Lambertian diffuse without the reflection) and will evaluate a pre-defined position set.
+        - The Luminance model evaluations are based on two metrics that use the Lambertian diffuse and Blinn-Phong specular reflectance models, which output the best position set.
+    (2) DISPLAYS the LED positions and model in a 3d environment.
+    (3) BRIGHTNESS CONTROL TUNING improves an position set by adjusting the lumens output of individual LEDs, such that the overall lighting balance is improved.
+
 
 #### DEMO VIDEO of LIGHTSTAGE SIMULATION
 [![Video: LightStage Simulation with Wheat Plant Model](https://pmdscully.files.wordpress.com/2016/01/wheat1_intensity_score_663.png)](http://www.youtube.com/watch?v=Jdfgg7R9Vds)
 
 
 #### PREREQUISITES
-    Python2.7.x (5)
+    Python2.7.x (5,12)
     PyOpenGL
     numpy
+    scipy
     
     To install PyOpenGL on Windows:
         First download:         PyOpenGL version '3.1.1b1-cp27' as x64 or x86 from http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl
         Then install as:        pip install path/to/download/PyOpenGL-3.1.1b1-cp27-none-win_XXXXX.whl
 
     To install PyOpenGL on Linux (Ubuntu/ Debian):
-        sudo apt-get install python2.7 python-opengl 
-        sudo pip install numpy
+        sudo apt-get install python2.7 python-opengl python-pip
+        sudo pip install numpy scipy
 
-    
+
+
 #### USAGE EXAMPLES:
+    cd src/
     python run.py
         Run in display mode, with default mini-dome, default camera layout and default required LEDs.
 
@@ -43,6 +50,7 @@
 
     python run.py -h
         Display options on command line.
+
 
 
 #### KEYBOARD/MOUSE CONTROLS:

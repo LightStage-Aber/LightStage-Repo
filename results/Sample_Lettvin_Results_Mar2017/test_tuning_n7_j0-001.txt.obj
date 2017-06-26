@@ -1,0 +1,14 @@
+# Blender v2.69 (sub 0) OBJ File: 'test_tuning_n7_j0-001.txt'
+www.blender.org
+mtllib positions_diffuse.mtl
+o test_tuning_n7_j0-001.txt
+v 1.0 0.0 0.0
+v -0.7902 -0.5113 0.3379
+v 0.0005521 0.7783 0.6278
+v 0.2919 -0.5149 0.806
+v -0.825 0.4456 -0.3476
+v 0.04421 -0.7632 -0.6446
+v 0.2785 0.5643 -0.7771
+usemtl None
+s off
+f 1 2 3

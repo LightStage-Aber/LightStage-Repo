@@ -6,26 +6,16 @@ from __future__ import print_function
 """
 
 from __future__ import division
-import random as rnd
-import time;     currentMillis = lambda: int(round(time.time() * 1000))
-import os
+
+currentMillis = lambda: int(round(time.time() * 1000))
 from itertools import chain; flatten_x = lambda x: list(chain.from_iterable(x));
 
 import logging
 logging.basicConfig(format='%(message)s')
 
-from datastructures.orderedset import OrderedSet, ListHashableOrderedSet
-from options import getPropertiesFile
-from file_utils import file_io
-from data_3d.obj_model_reader import get_all_vertex_face_objects, apply_scale, get_triangle_centers, read_vertices_objects, read_faces_objects
-from data_3d.dome_obj_data import get_dome_faces
-from ..manipulate_results_data import *
-from ..visualisations import *
-from ..evaluations import *
+from datastructures.orderedset import ListHashableOrderedSet
+from ..evaluator_generic import *
 from .. import distance_measures
-import monte_carlo_sequences
-from ..tuning_intensities.tuners import *
-from ..tuning_intensities.tuning_selector import *
 from helper_illuminance import *
 
 
@@ -39,14 +29,16 @@ class LoadLEDPositions(object):
     def __init__(self):
         dict_properties         = getPropertiesFile( "../properties/default.properties" )
         self._source_filename   = dict_properties['LightPositions']['light.objfilename']
-        self._lights_scale            = float(dict_properties['LightPositions']['light.scale'])
-        self._path_prefix             = dict_properties['LightPositions']['light.results_output_file_path_prefix']
+        self._lights_scale      = float(dict_properties['LightPositions']['light.scale'])
+        self._path_prefix       = dict_properties['LightPositions']['light.results_output_file_path_prefix']
+        self.shortname          = str(type(self).__name__)
 
     def load_leds_positions(self):
         # load in frame vertex positions as leds
         leds = read_vertices_objects( self._source_filename )[0]
         apply_scale( leds, scale=self._lights_scale )
         return leds
+
 
 class LoadLEDIndexes(object):
     """
@@ -57,10 +49,11 @@ class LoadLEDIndexes(object):
     """
     def __init__(self):
         dict_properties         = getPropertiesFile( "../properties/default.properties" )
-        self._source_filename   = dict_properties['EvaluateSingleResultsFile']['results_file.csvfilename']
-        self._column_number     = int(dict_properties['EvaluateSingleResultsFile']['results_file.column_number'])
-        self._number_of_leds    = int(dict_properties['EvaluateSingleResultsFile']['results_file.number_of_leds'])
-        self._path_prefix       = dict_properties['EvaluateSingleResultsFile']['results_file.results_output_file_path_prefix']
+        self._source_filename   = dict_properties['LightIndexPositions']['results_file.csvfilename']
+        self._column_number     = int(dict_properties['LightIndexPositions']['results_file.column_number'])
+        self._number_of_leds    = int(dict_properties['LightIndexPositions']['results_file.number_of_leds'])
+        self._path_prefix       = dict_properties['LightIndexPositions']['results_file.results_output_file_path_prefix']
+        self.shortname = str(type(self).__name__)
 
         assert (os.path.exists(self._source_filename))
         assert (self._column_number >= 0)
@@ -69,9 +62,12 @@ class LoadLEDIndexes(object):
     @staticmethod
     def get_vertices_from_indexes(indexes, vertices_list):
         led_vertices = []
+        assert max(indexes) < len(vertices_list), "Requested position index(es) are out of the indexable frame position range.\n" \
+                                                  "Maximum index: "+str(max(indexes))+"\n"\
+                                                  "Maximum indexable position: "+str(len(vertices_list)-1)
         for i in indexes:
             if i >= len(vertices_list):
-                logging.warn('Warning: request to select LED by an index value that is outside of the known set.')
+                logging.warn('Warning: request to select LED by an index value that is outside of the known set. %d / %d' % (i, len(vertices_list)))
             else:
                 v = vertices_list[i]
                 led_vertices.append( v ) if v is not None else None
@@ -82,6 +78,7 @@ class LoadLEDIndexes(object):
         best_LEDs = file_io.read_in_csv_file_to_list_of_lists(self._source_filename, skip_header=False)
         led_indexes = get_sorted_column_from_result_file(best_LEDs, column_index=self._column_number, qty=self._number_of_leds)
         return led_indexes
+
 
 class LoadFramePositions(object):
     """
@@ -95,6 +92,7 @@ class LoadFramePositions(object):
         self._frame_objfilename = dict_properties['FrameModel']['frame.objfilename']
         self._frame_scale = float(dict_properties['FrameModel']['frame.scale'])
         self.__hardcoded_leds = hardcoded_leds
+        self.shortname = str(type(self).__name__)
 
         self._with_support_access = eval(dict_properties['FrameModel']['frame.withsupportaccess'])
         assert isinstance(self._with_support_access, bool), "[FrameModel] frame.withsupportaccess must be of type 'bool'. " \
@@ -103,7 +101,6 @@ class LoadFramePositions(object):
         self._frame_indexes_are_important = eval(dict_properties['FrameModel']['frame.indexes_are_important'])
         assert isinstance(self._frame_indexes_are_important, bool), "[FrameModel] frame.indexes_are_important must be of type 'bool'. " \
                                                               "Found: %s" % (str(type(self._frame_indexes_are_important)))
-
 
     def get_frame(self):
         if self._frame_indexes_are_important: # Hardcoded / not
@@ -141,6 +138,7 @@ class LoadFramePositions(object):
             lowest_y = y_axis.index(min(y_axis))
             frame[lowest_y] = None
         return frame
+
 
 class LoadEdgeFramePositions(LoadFramePositions):
     """
@@ -223,9 +221,6 @@ class LoadEdgeFramePositions(LoadFramePositions):
         return return_frame
 
 
-
-
-
 class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePositions):
     """
     Evaluate the standard deviation of lambertian illuminance on surfaces of a target model, using a specified set of light vertex positions, i.e. Lettvin's diffuse positions.
@@ -247,6 +242,7 @@ class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePosition
     def tune( self, triangles ):
         EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
 
+
 class VertexMappedPositionEvaluator(RawPositionEvaluator):
     """
     Map the specified set of light vertex positions (loaded in the super class constructor)
@@ -259,7 +255,6 @@ class VertexMappedPositionEvaluator(RawPositionEvaluator):
         self.leds_vertices = self.load_leds_positions()
         self.frame = self.get_frame()
         self.leds_vertices = self.map_to_frame( self.frame )
-
         self.shortname = "Mapped to dome vertices ("+str(len(self.frame))+" points)"
 
     def map_to_frame(self, frame):
@@ -281,6 +276,7 @@ class VertexMappedPositionEvaluator(RawPositionEvaluator):
         
         return mapped
 
+
 class Edge10MappedPositionEvaluator(VertexMappedPositionEvaluator, LoadEdgeFramePositions):
     """
     Map the specified set of light vertex positions (loaded in the super class constructor) to the edges of the dome/ frame structure.
@@ -299,9 +295,6 @@ class Edge10MappedPositionEvaluator(VertexMappedPositionEvaluator, LoadEdgeFrame
         self.shortname = "Mapped to dome edges ("+str(self.NUM_OF_VERTICES_PER_EDGE-1)+" points per edge. "+str(len(self.frame))+" total points)"
 
 
-
-
-
 class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePositions):
     """
     Load a set of dome index positions from a CSV results file, depending on column number. 
@@ -315,7 +308,6 @@ class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePo
         self.frame = self.get_frame()
 
         self.leds_vertices = self.get_vertices_from_indexes(leds_indexes, self.frame)
-
         self.shortname = "LED Vertex Positions from Indexes."
 
     def display(self, triangles):
@@ -326,6 +318,7 @@ class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePo
 
     def tune( self, triangles ):
         EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
+
 
 class Edge10IndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadEdgeFramePositions):
     """
@@ -354,75 +347,6 @@ class Edge10IndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadEdgeFra
         EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
 
 
-
-
-
-
-
-
-    # def load_selected_LED_indexes(self):
-    #     dict_properties = getPropertiesFile("../properties/default.properties")
-    #     csv_results_filename = dict_properties['EvaluateEdgeMapSingleResultsFile']['edge_results_file.csvfilename']
-    #     column_number = int(dict_properties['EvaluateEdgeMapSingleResultsFile']['edge_results_file.column_number'])
-    #     number_of_leds = int(dict_properties['EvaluateEdgeMapSingleResultsFile']['edge_results_file.number_of_leds'])
-    #     path_prefix = dict_properties['EvaluateEdgeMapSingleResultsFile']['edge_results_file.results_output_file_path_prefix']
-    #     source_filename = csv_results_filename
-    #
-    #     assert (os.path.exists(csv_results_filename))
-    #     assert (column_number >= 0)
-    #     assert (number_of_leds > 0 and number_of_leds <= 3991)
-    #
-    #     # Load the results file:
-    #     best_LEDs = file_io.read_in_csv_file_to_list_of_lists(csv_results_filename, skip_header=False)
-    #     # Get a list of the best index points:
-    #     led_indexes = get_sorted_column_from_result_file(best_LEDs, column_index=column_number, qty=number_of_leds)
-    #     return led_indexes, path_prefix, source_filename
-
-    # def display(self, triangles, shape_name, kwords={}):
-    #
-    #     assert len(self.leds) > max(self.led_indexes), "Available quantity of LEDs ("+\
-    #                               str(len(self.leds))+\
-    #                               ") is less than the greatest index requested ("+str(max(self.led_indexes))+\
-    #                               ")."
-    #     for j in range(len(self.leds)):
-    #         v = self.leds[j]
-    #         draw_point( v, size=5 )
-    #     for led_num in self.led_indexes:
-    #         v = self.leds[led_num]
-    #         draw_wire_sphere( vertex=v, size=2, scale=1 )
-    #     for tri in triangles:
-    #         make_triangle_face( tri )
-
-    # def evaluate(self, triangles, shape_name, kwords={}):
-    #     """
-    #     Evaluate the standard deviation of lambertian illuminance of the terget shape, from the loaded leds vertex positions.
-    #     """
-    #     vertex_set = []
-    #     for led_num in self.led_indexes:
-    #         v = self.leds[led_num]
-    #         vertex_set.append(v)
-    #     surfaces = get_surface_evaluations(triangles, vertex_set)
-    #     if are_all_surfaces_hit(surfaces) == False:
-    #         print ("---FAILED--- to hit all surfaces. Result not written to file.")
-    #     else:
-    #         # extra_row_data = [self.shortname, self.objfilename, type(self).__name__]
-    #         # row = write_led_set_lambertian_scores_appended_result_file(self.leds, surfaces, self.leds,
-    #         #                                                            filename_suffix="_single_edge10_result_file_evaluation",
-    #         #                                                            path_prefix=self.path_prefix,
-    #         #                                                            extra_row_data=extra_row_data)
-    #
-    #         extra_row_data = [self.shortname , self.objfilename, type(self).__name__]
-    #         row = write_led_set_lambertian_scores_appended_result_file(self.leds, surfaces,
-    #                                                                    vertex_set, filename_suffix="_single-loaded-result-file-reevaluation",
-    #                                                                    path_prefix=self.path_prefix,
-    #                                                                    extra_row_data=extra_row_data)
-    #         best_candidate_leds_index_set = self.leds
-    #         print("Finished led vertex set:"+str(len(vertex_set))+", "+str(vertex_set))
-    #         print("Finished led set:"+str(len(self.led_indexes))+", "+str(self.led_indexes))
-    #         print("Finished result row:"+str(row))
-    #         print("Finished with standard deviation:"+str(row[4]))
-    #         print("Finished with normalised standard deviation:" + str(float(row[4]) / len(self.led_indexes)))
-    #
 
 
 

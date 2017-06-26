@@ -19,8 +19,8 @@ def get_parsed_commandline_options():
                                "'-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action." + \
                                "'-e1' =Use Reflectance Measures. " + \
                                "'-e2' =Use Illuminance Measure Search (Lambertian only). " + \
-                               "'-e3' =Use Illuminance Measure (Lambertian only) to evaluate 'Single' loaded file; depends on properties file values: see '[EvaluateSingleResultsFile]' and '[FrameModel]' - (file, qty, column, etc.) in 'default.properties' file." + \
-                               "'-e4' =Use Illuminance Measure (Lambertian only) to evaluate 'Single Edge(10:3926)' loaded file; depends on properties file values: see '[EvaluateSingleResultsFile]'" + \
+                               "'-e3' =Use Illuminance Measure (Lambertian only) to evaluate 'Single' loaded file; depends on properties file values: see '[LightIndexPositions]' and '[FrameModel]' - (file, qty, column, etc.) in 'default.properties' file." + \
+                               "'-e4' =Use Illuminance Measure (Lambertian only) to evaluate 'Single Edge(10:3926)' loaded file; depends on properties file values: see '[LightIndexPositions]'" + \
                                "'-e7' =Use Illuminance Measure (Lambertian only) to evaluate 'RAW' vertex position file; depends on properties file values: see '[LightPositions]'" + \
                                "'-e8' =Use Illuminance Measure (Lambertian only) to evaluate 'Vertex Mappings' vertex position file; depends on properties file values: see '[LightPositions]'" + \
                                "'-e9' =Use Illuminance Measure (Lambertian only) to evaluate 'Edge(10) Mappings' vertex position file; depends on properties file values: see '[LightPositions]'" + \

@@ -65,9 +65,11 @@ exp/Lettvin_Repulsion/cpp/*
 exp/Lettvin_Repulsion/helpers/*
 !exp/Lettvin_Repulsion/helpers/
 !exp/Lettvin_Repulsion/helpers/*.py
+!exp/Lettvin_Repulsion/test_output/*
 !exp/Lettvin_Repulsion/test_output/
 !exp/Lettvin_Repulsion/test_output/empty
 exp/Lettvin_Repulsion/test_output/Results*
+exp/
 
 
 # ---------------------------------------------------------

@@ -61,7 +61,7 @@ def write_led_set_lambertian_scores_appended_result_file(all_leds, surfaces, led
     extra_row_data: a list-like object. Appended to the CSV row written to file.
     """
     total_set_lambertian_score = np.sum(surfaces)
-    stdev_set = np.std(surfaces)
+    unnormalised_stdev_set = np.std(surfaces)
     mean = np.mean(surfaces)
     median = np.median(surfaces)
     min_ = min(surfaces)
@@ -72,10 +72,13 @@ def write_led_set_lambertian_scores_appended_result_file(all_leds, surfaces, led
     for index in range(len(all_leds)):
         if all_leds[index] in leds_vertex_set:
             led_index.append(index)
-    row = [len(leds_vertex_set), len(all_leds)] + [total_set_lambertian_score, mean, stdev_set, median, iqrange, min_,
+    row = [len(leds_vertex_set), len(all_leds)] + [total_set_lambertian_score, mean, unnormalised_stdev_set, median, iqrange, min_,
                                                    max_] + extra_row_data + [surfaces] + [
               time.strftime("%Y-%m-%d-%H-%M-%S")] + led_index
-    file_io.write_to_csv(row, "../" + str(path_prefix), "lambertian_led_sets" + str(filename_suffix) + ".csv")
+    csv_path = "../" + str(path_prefix)
+    csv_filename = "lambertian_led_sets" + str(filename_suffix) + ".csv"
+    file_io.write_to_csv(row, csv_path, csv_filename)
+    print("Data written to: "+str(csv_path)+str(csv_filename))
     return row
 
 

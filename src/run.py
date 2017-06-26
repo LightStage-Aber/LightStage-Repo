@@ -2,7 +2,7 @@ from __future__ import division
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import scipy
+import scipy, numpy
 import sys
 
 
@@ -23,6 +23,12 @@ if str(scipy.__version__) not in EXPECTED_VERSION_SCIPY:
     print "Incorrect scipy version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
     print "Expected "+str(EXPECTED_VERSION_SCIPY)
     print "Actual "+str(scipy.__version__)
+
+EXPECTED_VERSION_NUMPY = ['1.11.2','1.12.1']
+if str(numpy.__version__) not in EXPECTED_VERSION_NUMPY:
+    print "Incorrect numpy version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
+    print "Expected "+str(EXPECTED_VERSION_NUMPY)
+    print "Actual "+str(numpy.__version__)
 
 import tool_managers
 from model_helpers import Updateable_Line

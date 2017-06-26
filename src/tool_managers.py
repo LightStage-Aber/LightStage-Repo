@@ -6,8 +6,7 @@ from data_3d import *
 from modes import *
 from file_utils import *
 from modes.manipulate_results_data import *
-
-
+import logging
 
 
 
@@ -218,7 +217,7 @@ class Tool:
             draw_axes(self.scale, 2)
             draw_cameras(self.cameras_vertices)
 
-        tool_selected = self.tool.selector( self.scale )
+        tool_selected = self.tool.selector()
 
         if not tool_selected:
             self.OLD_TOOLS_HERE.selector(updateable_line, self.scale, self.cameras_vertices)
@@ -231,13 +230,13 @@ class ToolSelector(object):
         self.triangles, self.shape_name = get_target_shape_triangles()
         self.scale = scale
 
-    def selector(self, scale):
+    def selector(self):
         result = True
         triangles       = self.triangles[:]
         shape_name      = self.shape_name
 
         kwords = {
-            'all_leds': draw_dome(scale,
+            'all_leds': draw_dome(self.scale,
                                   show_points=False,
                                   show_led_spheres=False,
                                   show_tris=False,
@@ -247,20 +246,25 @@ class ToolSelector(object):
         }
         if self.cached_tool is None:
             switcher = {
-                3: VertexIndexPositionEvaluator(kwords),
-                4: Edge10IndexPositionEvaluator(kwords),
-                7: RawPositionEvaluator(kwords),
-                8: VertexMappedPositionEvaluator(kwords),
-                9: Edge10MappedPositionEvaluator(kwords),
+                3: VertexIndexPositionEvaluator,
+                4: Edge10IndexPositionEvaluator,
+                7: RawPositionEvaluator,
+                8: VertexMappedPositionEvaluator,
+                9: Edge10MappedPositionEvaluator,
             }
-            self.cached_tool = switcher.get(PARSE_OPTIONS.EVALUATION_METRIC_MODE, None)
-            result = self.cached_tool is not None
+
+            tool_class = switcher.get(PARSE_OPTIONS.EVALUATION_METRIC_MODE, None)
+            self.cached_tool = tool_class(kwords) if tool_class is not None else None
+
+            if self.cached_tool is None:
+                logging.warning("New Tool strategy failed to be selected and/or initialized. Evaluation Mode option: "+str(PARSE_OPTIONS.EVALUATION_METRIC_MODE))
+                result = False
 
         if result:
             switcher = {
                 1: self.cached_tool.display,
                 2: self.cached_tool.evaluate,
-                #3: self.cached_tool.tune(triangles, shape_name, kwords),
+                3: self.cached_tool.tune,
             }
             func = switcher.get(PARSE_OPTIONS.EVALUATION, lambda x: None)
             func(triangles)

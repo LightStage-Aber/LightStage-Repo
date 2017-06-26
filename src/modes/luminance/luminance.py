@@ -3,19 +3,19 @@
      - Module containing algorithmic approaches that quantify based on amount of "light reflected from the surface of a target object into the camera(s)".
 """
 from __future__ import division
-#from abc import ABCMeta
-import random as rnd
-import time;     currentMillis = lambda: int(round(time.time() * 1000))
+
+import time;
+
+currentMillis = lambda: int(round(time.time() * 1000))
 
 from options import *
 from file_utils import *
-from ..manipulate_results_data import *
-from ..visualisations import *
+from modes.visualisations import *
 from model_helpers.vector_maths import rotate_triangles
-import surface_coverage_metric
-from coverage_datastructure import accumulated_coverage_datastructure
+import modes.luminance.surface_coverage_metric
+from modes.luminance.coverage_datastructure import accumulated_coverage_datastructure
 
-from ..evaluations import EvaluatorGeneric
+from modes.evaluator_generic import EvaluatorGeneric
 
 
 
@@ -133,7 +133,7 @@ class MeasureReflectanceIntoCameras(EvaluatorGeneric):
     #        print("Coverage Score",best_score, best_leds)
             if kwords['DO_EVALUATIONS']:
                 led_to_tri_reflection_map           = self.lumination_coverage_datastructure.get()
-                best_score, best_config, best_leds  = surface_coverage_metric.get_led_configuration_with_best_coverage( 
+                best_score, best_config, best_leds  = modes.luminance.surface_coverage_metric.get_led_configuration_with_best_coverage(
                                                                                   led_to_tri_reflection_map, 
                                                                                   len(triangles), 
                                                                                   max_quantity_of_leds_required=kwords['QTY_OF_BEST_LEDS_REQUIRED'], 
