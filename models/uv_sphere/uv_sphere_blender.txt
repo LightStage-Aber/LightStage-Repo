@@ -1,0 +1,18 @@
+UV Sphere
+A standard UV sphere is made out of quad faces and a triangle fan at the top and bottom. It can be used for texturing.
+
+Segments
+Number of vertical segments. Like the Earth’s meridians, going pole to pole.
+Rings
+Number of horizontal segments. These are like the Earth’s parallels.
+
+Note
+    - Rings are face loops and not edge loops, which would be one less.
+
+
+32 segments
+16 rings
+1.0 size
+
+Source:
+https://docs.blender.org/manual/en/latest/modeling/meshes/primitives.html#uv-sphere
