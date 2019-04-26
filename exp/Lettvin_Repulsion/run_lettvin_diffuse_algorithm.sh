@@ -66,9 +66,9 @@ function run_evaluations(){
     pwd=""$(pwd)""
     cd "$path_to_run_evaluator"
     errecho "Begin Py evaluations"
-    python run.py -m2 -e7
-    python run.py -m2 -e8
-    python run.py -m2 -e9
+    python run.py -p "../models/ico_sphere/ico_sphere.obj" -m2 -e7
+    python run.py -p "../models/ico_sphere/ico_sphere.obj" -m2 -e8
+    python run.py -p "../models/ico_sphere/ico_sphere.obj" -m2 -e9
     #python run.py -p $path_from_run_to_range_test_script""$objfile -s 8
     errecho "End Py evaluations"
     cd "$pwd"

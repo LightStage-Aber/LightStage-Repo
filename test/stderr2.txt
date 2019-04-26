@@ -1,0 +1,16 @@
+test_brightness_control_MonteCarlo_TweakerCSV__BetterThan_VNoAccControl (__main__.Test_IterativeRegression) ... 0.109806913064 ... FAIL
+test_brightness_control_std_reduces_evaluation_std_on_MonteCarlo_InstalledCSV (__main__.Test_IterativeRegression) ... skipped 'Skipping Monte Carlo iterative regression test..'
+test_brightness_control_std_reduces_evaluation_std_on_MonteCarlo_TweakerCSV (__main__.Test_IterativeRegression) ... skipped 'Skipping Monte Carlo iterative regression test..'
+
+======================================================================
+FAIL: test_brightness_control_MonteCarlo_TweakerCSV__BetterThan_VNoAccControl (__main__.Test_IterativeRegression)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test_PLOS_ONE_Article_MonteCarlo_Tuning_EXPS_May2017.py", line 34, in test_brightness_control_MonteCarlo_TweakerCSV__BetterThan_VNoAccControl
+    self.assertTrue(actual_std > actual_tuned)
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 3 tests in 12380.196s
+
+FAILED (failures=1, skipped=2)

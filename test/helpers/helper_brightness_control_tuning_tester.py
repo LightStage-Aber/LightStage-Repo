@@ -22,7 +22,7 @@ class BrightnessControlTuningTester(GetActual_FromIndex):
         getPropertiesFile("../properties/default.properties")['BrightnessControlTuner'][
             'tune.regression.threshold'] = actual_std
         getPropertiesFile("../properties/default.properties")['BrightnessControlTuner'][
-            'tune.regression.max_iterations'] = 1000
+            'tune.regression.max_iterations'] = 10000
 
         from time_utils.timer import MyTimer
         with MyTimer():

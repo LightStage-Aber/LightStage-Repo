@@ -6,8 +6,8 @@ from helpers.helper_brightness_control_tuning_tester import BrightnessControlTun
 
 
 class _Config:
-    SKIP_SLOW_ITERATIVE_REGRESSION_MONTE_CARLO_TESTS = True
-    SKIP_ITERATIVE_REGRESSION_MONTE_CARLO_TESTS = False
+    SKIP_SLOW_ITERATIVE_REGRESSION_MONTE_CARLO_TESTS = False
+    SKIP_ITERATIVE_REGRESSION_MONTE_CARLO_TESTS = True
 
 
 class Test_IterativeRegression(unittest.TestCase, BrightnessControlTuningTester):

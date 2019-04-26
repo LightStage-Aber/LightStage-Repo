@@ -8,7 +8,7 @@ errecho(){ >&2 echo $@; }
 declare -a range_n=$(seq 4 2 90) #$(seq 3 90)  #e.g. ("44" "45")
 declare -a range_j=("0.001" "0.0001" "0.00001" "0.000001" "0.0000001")
 declare -a range_r=("0")
-max_iterations=50
+max_iterations=500
 
 # Declare test output location:
 result_set="test_output/Results_RangeTest_"$(date -d "today" +"%Y-%m-%d_%H")"-00"
