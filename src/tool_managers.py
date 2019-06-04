@@ -53,7 +53,8 @@ DO_EVALUATIONS      = True
 DRAW_REFLECTION_RAY = True
 DRAW_INCIDENT_RAY   = True
 DRAW_CAMERA_REFLECTION_RAY  = True
-scale = 8
+scale = property_to_number(section="FrameModel", key="frame.scale", vmin=1, vmax=20, vtype=float)
+scale = scale if scale is not None else 8
 TARGET_ROTATIONS = 6
 TARGET_ROTATION_AXIS = (0,1,0)
 TARGET_ROTATION_DEGREES=(360/TARGET_ROTATIONS)
@@ -96,6 +97,7 @@ def define_help():
     HELP['l'] = "Load new score file."
     HELP['+'] = "Increase LEDs selected. (Shading Score only. Unchecked bounds.)"
     HELP['-'] = "Decrease LEDs selected. (Shading Score only. Unchecked bounds.)"
+    HELP['ws,ad,qe'] = "Manipulate the viewport XYZ positions (ws, ad, qe), or click-drag with mouse."
     HELP['Up']    = "Zoom in / Wheel-up"
     HELP['Down']  = "Zoom out / Wheel-down"
     HELP['F1']    = "Display help."
@@ -225,6 +227,10 @@ class Tool:
 
 
 class ToolSelector(object):
+    """
+        The fundamental conduit and selection mechanic to choose application behaviour; e.g. evaluations vs display vs tuning. and which behaviour strategy.
+    """
+    warned = False
     def __init__(self, scale):
         self.cached_tool = None
         self.triangles, self.shape_name = get_target_shape_triangles()
@@ -244,22 +250,27 @@ class ToolSelector(object):
                                   get_not_show_tris=False,
                                   show_selected_leds=None)
         }
+        # (1) Select Class Reference to Execute: ( See modes/illuminance/illuminance.py classes. )
         if self.cached_tool is None:
             switcher = {
                 3: VertexIndexPositionEvaluator,
-                4: Edge10IndexPositionEvaluator,
+                4: EdgeXIndexPositionEvaluator,
                 7: RawPositionEvaluator,
                 8: VertexMappedPositionEvaluator,
-                9: Edge10MappedPositionEvaluator,
+                9: EdgeXMappedPositionEvaluator,
             }
 
             tool_class = switcher.get(PARSE_OPTIONS.EVALUATION_METRIC_MODE, None)
+            # Instantiate Selected (1) Class
             self.cached_tool = tool_class(kwords) if tool_class is not None else None
 
             if self.cached_tool is None:
-                logging.warning("New Tool strategy failed to be selected and/or initialized. Evaluation Mode option: "+str(PARSE_OPTIONS.EVALUATION_METRIC_MODE))
                 result = False
+                if ToolSelector.warned is False:
+                    logging.warning("New Tool strategy failed to be selected and/or initialized.")
+                    ToolSelector.warned = True
 
+        # (3) Select Function Reference to Execute:
         if result:
             switcher = {
                 1: self.cached_tool.display,
@@ -267,6 +278,8 @@ class ToolSelector(object):
                 3: self.cached_tool.tune,
             }
             func = switcher.get(PARSE_OPTIONS.EVALUATION, lambda x: None)
+
+            #Execute (2) function on that (1) class:
             func(triangles)
 
         return result
@@ -274,11 +287,16 @@ class ToolSelector(object):
 
 
 class OldToolSelector_Untested(ToolSelector):
+    """
+        Evaluation (-m2) disabled in favour of cleaner code, more modern opengl code and illuminance evaluation methods. 
+        Viewing (-m1) positions from file, etc. remains operable.
+        Also see /modes/luminance/luminance.py
+    """
     warned = False
     def selector(self, updateable_line, scale, camerasVertices):
         global camera_layout
         if not OldToolSelector_Untested.warned:
-            print("Warning pre:v0.1.3 mode selected: Check runtime argument -e (--evaluation-metric-mode).")
+            print("Warning pre:v0.1.3 mode selected: Check runtime argument -e (--evaluation-metric-mode): " +str(PARSE_OPTIONS.EVALUATION_METRIC_MODE))
             print("--Untested features ahead--")
             OldToolSelector_Untested.warned = True
         triangles       = self.triangles[:]
@@ -434,7 +452,7 @@ def draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name 
 
 
 def get_target_shape_triangles():
-    global TARGET_TRIANGLES, TARGET_SHAPE, TARGET_SHAPE_NAME
+    global TARGET_TRIANGLES, TARGET_SHAPE, TARGET_SHAPE_NAME, TARGET_TRANSLATION
     # Here be dragons..
     filename = "../models/dome/dome_c.obj"
     shape_name = "Dome"
@@ -446,7 +464,7 @@ def get_target_shape_triangles():
         filename = TARGET_SHAPE if TARGET_SHAPE is not None else filename
         scale = TARGET_SCALE if TARGET_SCALE is not None else dome_scale
         TARGET_SHAPE_NAME = os.path.basename(TARGET_SHAPE) if TARGET_SHAPE is not None else shape_name
-        triangles = obj_model_reader.get_all_object_triangles(filename=filename, scale=scale)
+        triangles = obj_model_reader.get_all_object_triangles(filename=filename, scale=scale, translation=TARGET_TRANSLATION)
         checkShapeValidity( triangles )
         TARGET_TRIANGLES = triangles
     return TARGET_TRIANGLES, TARGET_SHAPE_NAME

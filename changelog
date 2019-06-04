@@ -4,21 +4,28 @@ LightStage_LightPositioning_EvaluationTool
 ------------------------------------------
 
 
-== FILES:
------------
-    /src                                    - Code.
-    /test                                   - Unit tests for src/ code.
-    /models                                 - Sample 3D obj model files.
-    /results                                - Example scoring result data files and example input .csv/.obj files.
-    /properties								- Configuration file to simplify running of experiments; in particular with command line options: -e3 through to -e9.
-    /exp                                    - Experiment scipts, i.e. for particle replusion position testing
-
-
-
-== DEMO USAGE EXAMPLES:
+== BASIC MODES OF USE.
 -------------------
-    python run.py -h
+    python run.py -h.
         Displays options on command line.
+
+    ./properties/default.properties (xml file)
+        Contains a number of comfigurations for the application, evaluations, tuning and display modes.
+
+    python run.py -m1
+        Display mode, see the visualiation of the configured setup. Effected by ./properties/default.properties file, and command line options switches.
+
+    python run.py -m2
+        Evalation mode
+
+    python run.py -m3
+        Tuning mode
+
+
+
+
+== DEMO USAGE EXAMPLES OF LUMINANCE RESULTS:
+--------------------------------------------
 
     python run.py
         Run in display mode (-m), with default mini-dome, default camera layout (-c) and default required LEDs (-l).
@@ -34,6 +41,7 @@ LightStage_LightPositioning_EvaluationTool
         Run in display mode, with plants3.obj target model loaded (-p), with a scaling factor (-s) of 0.01 and translated (-t) -4 on the Y-axis
         Loads result data file (-r) for the plant3 model: ../results/blinn-phong+lambert_shading_scores/plant3_realistic_cam/led_scores_2016-01-11-01-22-23.csv
 
+    See `python run.py -h` for help and more options.
 
 
 == EVALUATION USAGE EXAMPLES USING ILLUMINANCE:
@@ -72,6 +80,14 @@ LightStage_LightPositioning_EvaluationTool
         This takes from 1 to 180+ seconds for evaluation depending on number of LEDs and number of surfaces of target model.
         By example, 44 LEDs and the default dome model with 180 surfaces, takes 1-2 seconds.
 
+    python run.py -m1 -e42 -p "../models/ico_sphere/ico_sphere.obj"
+        Run in display mode (-m1), using the Edge Mapping (-e4) as 'Edge2', with the `ico_sphere` target object. \
+        In this mode, each edge of the dome has an added point at the midpoint between the two edge endpoints.
+        You will have to provide an input file (`results_file.csvfilename`) in the properties file.
+        See the 'properties/default.properties' file settings as follows:
+            [LightIndexPositions]
+            results_file.csvfilename=../results/Control_91-92_March2017/debevec_edge2_lxxx.csv
+            results_file.csvfilename=../results/Control_91-92_March2017/debevec_edge2_lxxx.csv
 
     == Evaluate 3d Coordinate Positions from .obj file format: (-e7, -e8, -e9)
 
@@ -275,14 +291,27 @@ Options:
 === CHANGE LOG HISTORY:
 ============================
 
-Todo: Planned release: LightStage_LightPositioning_EvaluationTool v0.1.82 -- 2017/05/
-Todo: - Integrate Saff97 spheres, via antiprism.
-Todo: - Integrate Repulsion by percentage move, via antiprism.
-Todo: - Create test suites for PLOS One paper including new Saff97 (as Geometric) and Repulsion by% with byJitter (as Repulsion).
 Todo: - Create test suites for PLOS One paper with new target models (plant dataset, head/face dataset, sphere).
-
-Todo: Planned release: - LightStage_LightPositioning_EvaluationTool v0.1.81 -- 2017/05/
 Todo: - Refactor - Move dependencies of "Old_ToolSelector" (i.e. luminance evaluation and viewing techniques) from input arguments (and as globals) to properties key-value pairs. Remove capability to set number of LEDs in both locations.
+Todo: - Analyse 'evenness' metric between 20 to 92 and 92 to 361, to validate correctness over those ranges.
+
+
+
+AU LightStage Experimentation Framework - v0.2 - 2019/06/04
+------------------------------------------------------------------------------
+Updated readme.md.
+Added right-click menu to OpenGL window (quit and stop rotation).
+Added antiprism shapes, including spherical: icosahedron 2v, 3v, uv_8_12.obj (sphere of rings).
+Added Edge1 and Edge2,Edge10 with tested and corrected vertex points. To configure Debevec and Ghosh's frames.
+Refactored handling of Edge1-10 code to become EdgeX.
+Fixed target model object translation.
+Updated frame OBJ loader to permit OBJ models with poly-faces (>3). To load UV_8_12 model as Ghosh's frame.
+    Note: Target object OBJ loader still only permits OBJ models with tri faces (==3) only.
+Modified removal of support access frame vertex to remove n vertices. To configure Ghosh's frame. Setting in default.properties.
+Added frame.scale to default.properties to rescale frame. To configure Dutta and Ghosh's frames.
+Added experiment stats reporting of 'relative standard deviation' to STDOUT, though under most circumstances it is not a useful comparator.
+
+
 
 
 LightStage_LightPositioning_EvaluationTool v0.1.8 -- 2017/06/26 - (2017/04/25)

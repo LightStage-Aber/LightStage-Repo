@@ -46,23 +46,26 @@ def draw_line( start=[0.0, 0.0, 0.0], end=[-2.0,-2.0,-2.0] , thickness=1.0 ):
 # ----------------------------------------------
 
 
-def draw_text(text, x, y, DISABLE_LIGHTING=False):
+def draw_text(text, x, y, DISABLE_LIGHTING=False, translate_point=[0,0,0]):
         """ Display 2d text, orthogonally.
         """
         windowWidth     = glutGet(GLUT_WINDOW_WIDTH)
         windowHeight    = glutGet(GLUT_WINDOW_HEIGHT)
+        t               = translate_point
         
+
         # The Projection Matrix
         glMatrixMode(GL_PROJECTION)
         matrix = glGetDoublev(GL_PROJECTION_MATRIX)
         glLoadIdentity()
-        glOrtho(0.0, windowWidth, 0.0, windowHeight, 0.0, 1.0)
+        glOrtho(0.0, windowWidth, windowHeight, 0.0, 0.0, 1.0)
         
         # The Model Matrix
         glMatrixMode (GL_MODELVIEW)
         glLoadIdentity()
         glPushMatrix()
         glColor3f(1.0,1.0,1.0)
+        
         glRasterPos2i(x,y)
         if DISABLE_LIGHTING:
                 glDisable(GL_LIGHTING)
@@ -78,6 +81,23 @@ def draw_text(text, x, y, DISABLE_LIGHTING=False):
         # Set model matrix model
         glMatrixMode (GL_MODELVIEW)
         
+
+# def get2dPoint(point3D, viewMatrix, projectionMatrix, width, height):
+
+#         projectionMatrix = glGetDoublev(GL_PROJECTION_MATRIX)
+        
+#         viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+#         # transform world to clipping coordinates
+#         point3D = viewProjectionMatrix.multiply(point3D);
+
+#         winX = int( round((( point3D[0] + 1 ) / 2.0) * width ))
+
+#         # we calculate -point3D.getY() because the screen Y axis is
+#         # oriented top->down 
+#         winY = int( round((( 1 - point3D[1] ) / 2.0) *height ) )
+
+#         return (winX, winY)
 
 
 def draw_sphere():
@@ -185,7 +205,7 @@ def draw_cube():
  
 
 def draw_axes(length=5, width_scale=3):
-        l = length
+        l = int(round(length))
         thickness = 1
         point_size = 1.667
         # z
@@ -254,16 +274,65 @@ def draw_cameras( cameraVertices ):
 
 def draw_wire_sphere( vertex=(0,0,0), size=1, scale=1 ):
         glPushMatrix()
+        # no_mat = [0.0, 0.0, 0.0, 1.0]
+        # mat_ambient = [0.7, 0.7, 0.7, 1.0]
+        # mat_ambient_color = [0.8, 0.8, 0.2, 1.0]
+        # mat_diffuse = [0.1, 0.5, 0.8, 1.0]
+        # mat_specular = [1.0, 1.0, 1.0, 1.0]
+        # no_shininess = 0.0
+        # low_shininess = 5.0
+        # high_shininess = 100.0
+        # mat_emission = [0.3, 0.2, 0.2, 0.0]
+        # from OpenGL.GL import GL_FRONT, GL_AMBIENT, GL_DIFFUSE, GL_SPECULAR, GL_SHININESS, GL_EMISSION, glMaterialfv, glMaterialf
+        # glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+        # glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+        # glMaterialfv(GL_FRONT, GL_SPECULAR, no_mat);
+        # glMaterialf(GL_FRONT, GL_SHININESS, no_shininess);
+        # glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission);
         glTranslatef( vertex[0]*scale, vertex[1]*scale, vertex[2]*scale )
-        glutWireSphere(0.4, 9, 9)
+        glutWireSphere(size, 9, 9)
         glPopMatrix()
-
 
 def draw_solid_sphere( vertex=(0,0,0), size=1, scale=1 ):
         glPushMatrix()
+        # no_mat = [0.0, 0.0, 0.0, 1.0]
+        # mat_ambient = [0.7, 0.7, 0.7, 1.0]
+        # mat_ambient_color = [0.8, 0.8, 0.2, 1.0]
+        # mat_diffuse = [0.1, 0.5, 0.8, 1.0]
+        # mat_specular = [1.0, 1.0, 1.0, 1.0]
+        # no_shininess = 0.0
+        # low_shininess = 5.0
+        # high_shininess = 100.0
+        # mat_emission = [0.3, 0.2, 0.2, 0.0]
+        # from OpenGL.GL import GL_FRONT, GL_AMBIENT, GL_DIFFUSE, GL_SPECULAR, GL_SHININESS, GL_EMISSION
+        # glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient)
+        # glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse)
+        # glMaterialfv(GL_FRONT, GL_SPECULAR, no_mat)
+        # glMaterialf(GL_FRONT, GL_SHININESS, no_shininess)
+        # glMaterialfv(GL_FRONT, GL_EMISSION, mat_emission)
         glTranslatef( vertex[0]*scale, vertex[1]*scale, vertex[2]*scale )
-        glutSolidSphere(0.4, 9, 9)
+        # glColor3f(0.0,0.0,0.0)
+        glutSolidSphere(size, 9, 9)
         glPopMatrix()                
+
+
+def draw_wire_frame_of_obj_from_filename(filename, scale=8):
+        faces = get_all_object_polyfaces( filename, scale )
+        
+        glLineWidth( 3.5 )
+        glBegin(GL_LINES)
+        glColor3f(0.0,0.0,0.0)
+        # faces = [Xn*faces][Xn*vertices][3xfloats]
+        for f in faces:
+                # Make Edges based on the quantity of vertices in a face; if 3, then (1,2),(2,3),(3,1); but if 4, then (1,2),(2,3),(3,4),(4,1).
+                for i in range(len(f)):
+                        v1 = f[i]
+                        j = i+1 if i < len(f)-1 else 0 # Wrap around to point0 if already at pointEND
+                        v2 = f[j]
+                        glVertex3f( v1[0], v1[1], v1[2] )
+                        glVertex3f( v2[0], v2[1], v2[2] )
+        glEnd()
+        glLineWidth( 1.0 )
 
 def draw_dome( scale_multiplier =2,
                 show_points     = False,

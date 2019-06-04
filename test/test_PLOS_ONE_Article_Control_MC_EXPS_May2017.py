@@ -6,7 +6,7 @@ from helpers.helper_evaluation_tuning_tester import GetActual_FromIndex
 
 
 class _Config:
-    SKIP_SLOW_TESTS = False
+    SKIP_SLOW_TESTS = True
     SKIP_CONTROL_TESTS = False
     SKIP_MONTE_CARLO_TESTS = False
 

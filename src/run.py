@@ -8,27 +8,27 @@ import sys
 
 __EXPECTED_VERSION__ = '(2, 7)'
 if str(sys.version_info[:2]) != __EXPECTED_VERSION__:
-    print "Incorrect Python version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
-    print "Expected "+str(__EXPECTED_VERSION__)
-    print "Actual "+str(sys.version_info[:2])
+    print("Unexpected Python version, attempting to continue. Check the dependencies and version numbers are compatible to execute this module.")
+    print("Expected "+str(__EXPECTED_VERSION__))
+    print("Actual "+str(sys.version_info[:2]))
 
-EXPECTED_VERSION_OPENGL = ['3.1.1b1','3.1.1a1','3.0.2']
+EXPECTED_VERSION_OPENGL = ['3.1.1b1','3.1.1a1','3.0.2', '3.1.0']
 if str(OpenGL.__version__) not in EXPECTED_VERSION_OPENGL:
-    print "Incorrect OpenGL version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
-    print "Expected "+str(EXPECTED_VERSION_OPENGL)
-    print "Actual "+str(OpenGL.__version__)
+    print("Unexpected OpenGL version, attempting to continue. Check the dependencies and version numbers are compatible to execute this module.")
+    print("Expected "+str(EXPECTED_VERSION_OPENGL))
+    print("Actual "+str(OpenGL.__version__))
 
-EXPECTED_VERSION_SCIPY = ['0.18.1','0.19.0']
+EXPECTED_VERSION_SCIPY = ['0.18.1','0.19.0','1.2.1']
 if str(scipy.__version__) not in EXPECTED_VERSION_SCIPY:
-    print "Incorrect scipy version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
-    print "Expected "+str(EXPECTED_VERSION_SCIPY)
-    print "Actual "+str(scipy.__version__)
+    print("Unexpected scipy version, attempting to continue. Check the dependencies and version numbers are compatible to execute this module.")
+    print("Expected "+str(EXPECTED_VERSION_SCIPY))
+    print("Actual "+str(scipy.__version__))
 
-EXPECTED_VERSION_NUMPY = ['1.11.2','1.12.1']
+EXPECTED_VERSION_NUMPY = ['1.11.2','1.12.1','1.16.3']
 if str(numpy.__version__) not in EXPECTED_VERSION_NUMPY:
-    print "Incorrect numpy version, attempting to continue. Check the dependencies and version numbers are correct to execute this module."
-    print "Expected "+str(EXPECTED_VERSION_NUMPY)
-    print "Actual "+str(numpy.__version__)
+    print("Unexpected numpy version, attempting to continue. Check the dependencies and version numbers are compatible to execute this module.")
+    print("Expected "+str(EXPECTED_VERSION_NUMPY))
+    print("Actual "+str(numpy.__version__))
 
 import tool_managers
 from model_helpers import Updateable_Line
@@ -43,6 +43,9 @@ class _StateData(object):
         viewport_depth = -27.0
         default_x = 0
         default_z = 0
+        @staticmethod
+        def toggle_rotate():
+            _StateData.do_rotate = not _StateData.do_rotate  # toggle
 
 
 class OpenGLInputHandler:
@@ -69,7 +72,7 @@ class OpenGLInputHandler:
         if args[0] in [ESCAPE]:
             sys.exit(0)
         elif args[0] == SPACE:
-            _StateData.do_rotate = not _StateData.do_rotate  # toggle
+            _StateData.toggle_rotate()
         elif args[0] == 'z':
             _StateData.default_x += rate
         elif args[0] == 'x':
@@ -117,7 +120,7 @@ class OpenGLInputHandler:
                 z -= rate * 0.5
             elif args[0] == 'h':
                 z += rate * 0.5
-            print (x, y, z)
+            print(x, y, z)
             self.updateable_line.set_xyz(x, y, z)
 
         elif args[0] == GLUT_KEY_RIGHT:
@@ -165,7 +168,11 @@ class OpenGLInputHandler:
 
 class OpenGLRunner(object):
     __window = 0
-    __lights = [(15, 15, 10), (-20.0, -20.0, 20.0), (0.0, -20.0, 0.0), (-20.0, 0.0, 0.0)]
+    # __lights = [(15, 15, 10), (-20.0, -20.0, 20.0), (0.0, -20.0, 0.0), (-20.0, 0.0, 0.0)]
+    __lights = [(10, 0, 0), (0, 10, 0), (0, 0, 10), 
+                (20, 0, 0), (0, 20, 0), (0, 0, 20), 
+                #(-20.0, 0, 0), (0.0, -20.0, 0.0), (0, 0.0, -20.0)
+                ]
 
     def __init__(self, input_handler, draw_callback_func):
         self.__keyPressed_func  = input_handler.keyPressed
@@ -185,11 +192,11 @@ class OpenGLRunner(object):
 
         self.enable_lighting()
 
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, self.__vec(0.5, 0.3, 0.5, 1))
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, self.__vec(.5, .5, .5, .5))
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64)
-
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, self.__vec(0.2, 0.2, 0.2, 1))
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, self.__vec(1, 1, 1, .2))
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 99)
         glShadeModel(GL_SMOOTH)
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(45.0, float(Width) / float(Height), 0.1, 1000.0)
@@ -219,28 +226,61 @@ class OpenGLRunner(object):
 
 
     def enable_lighting(self):
-            global GL_LIGHTING, GL_POSITION, GL_SPECULAR, GL_DIFFUSE
-            #print "Max number of OpenGL lights: ... it is 8... although it reports: "+str(GL_MAX_LIGHTS)
+            global GL_LIGHTING, GL_POSITION, GL_SPECULAR, GL_DIFFUSE, GL_AMBIENT
             glEnable(GL_LIGHTING)
             li_num = 16384  # GL_LIGHT0, max of 8
             for l in OpenGLRunner.__lights:
                     glEnable(li_num)
                     glLight(li_num, GL_POSITION, self.__vec(l[0], l[1], l[2], 1))    # http://pyopengl.sourceforge.net/documentation/manual-3.0/glLight.html
-                    glLight(li_num, GL_SPECULAR, self.__vec(.5, .5, 1, 1))
-                    glLight(li_num, GL_DIFFUSE, self.__vec(1, 1, 1, 1))
+                    glLight(li_num, GL_AMBIENT, self.__vec(.5, .5, 5, 1))
+                    glLight(li_num, GL_DIFFUSE, self.__vec(.5, .5, .5, 1))
+                    glLight(li_num, GL_SPECULAR, self.__vec(1, 1, 1, 1))
                     li_num += 1
                     if li_num > 16391:
-                            print "MAX NUM OF LIGHTS EXCEEDED. Truncating num of lights at 8."
+                            print("MAX NUM OF LIGHTS EXCEEDED. Truncating num of lights at 8.")
                             break
+    
+    def select_menu(self, choice):
+        def _toggle_rotate():
+            _StateData.toggle_rotate()
+        def _exit():
+            sys.exit(0)
+        {
+            1: _toggle_rotate,
+            2: _exit
+        }[choice]()
+        glutPostRedisplay()
+        return 0
 
+    def right_click_menu(self):
+        from ctypes import c_int,c_void_p
+        import platform
+        #platform specific imports:
+        if (platform.system() == 'Windows'):
+            #Windows
+            from ctypes import WINFUNCTYPE
+            CMPFUNCRAW = WINFUNCTYPE(c_int, c_int)
+        else:
+            #Linux
+            from ctypes import CFUNCTYPE
+            CMPFUNCRAW = CFUNCTYPE(c_int, c_int)
+            
+        myfunc = CMPFUNCRAW(self.select_menu)
+
+        color_submenu = glutCreateMenu( myfunc )
+        glutAddMenuEntry("Toggle Rotation", 1);
+        glutAddMenuEntry("Quit", 2);
+        glutAttachMenu(GLUT_RIGHT_BUTTON);
 
     def draw(self):
             glutInit()
             glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
             glutInitWindowSize(800,600)
             glutInitWindowPosition(0,5)
-            OpenGLRunner.__window = glutCreateWindow(b'LightStage V3 - Target Illumination Score Tool')
+            OpenGLRunner.__window = glutCreateWindow(b'LightStage - Target Illumination Score Tool')
             glViewport(0, 0, 500, 500);
+
+            self.right_click_menu()
 
             glutDisplayFunc(self.DrawGLScene)
             glutIdleFunc(self.DrawGLScene)
