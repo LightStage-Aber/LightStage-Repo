@@ -311,7 +311,7 @@ def get_full_set_surface_evaluations(triangles, leds):
             """
             if is_front_facing_reflection(tri, l, r):       #Also see: __debug_is_cullable_reflection(tri, OTri, l, r, c )
                 draw_incident_ray(c, l)
-                lamb_diffuse        = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1 )
+                lamb_diffuse        = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1, intensity=1.0 )
 
                 score               = lamb_diffuse  # Get Lambertian intensity value (x1) per surface per led. --> [surface] = accumulated score.
                 surfaces[led_num][tri_num]   += score

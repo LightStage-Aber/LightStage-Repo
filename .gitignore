@@ -4,7 +4,7 @@
 *~
 *.pyc
 .~*
-
+.ipynb_checkpoints
 
 # ---------------------------------------------------------
 # Ignore /src/
@@ -15,7 +15,7 @@ src/data_3d/UNMAPPED_17thJune2016_dome_obj_data.py
 src/data_3d/junk/*
 src/config.py
 src_data_analysis/
-
+XDG_CACHE_HOME/
 
 # ---------------------------------------------------------
 # Ignore /results/
@@ -69,8 +69,22 @@ exp/Lettvin_Repulsion/helpers/*
 !exp/Lettvin_Repulsion/test_output/
 !exp/Lettvin_Repulsion/test_output/empty
 exp/Lettvin_Repulsion/test_output/Results*
-exp/
 
+exp/Evenness_Scaling/*
+!exp/Evenness_Scaling/
+!exp/Evenness_Scaling/*.ipynb
+!exp/Evenness_Scaling/*.sh
+!exp/Evenness_Scaling/helpers/
+exp/Evenness_Scaling/helpers/*
+!exp/Evenness_Scaling/helpers/
+!exp/Evenness_Scaling/helpers/*.py
+exp/Evenness_Scaling/test_output/*
+!exp/Evenness_Scaling/test_output/
+!exp/Evenness_Scaling/test_output/empty
+exp/Evenness_Scaling/test_output/Results*
+
+!exp/exp_plotting
+!exp/
 
 # ---------------------------------------------------------
 # Ignore corruptions: (caused by unit test usage of properties and options parsers)

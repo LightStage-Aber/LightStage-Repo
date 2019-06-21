@@ -40,6 +40,88 @@ class LoadLEDPositions(object):
         apply_scale( leds, scale=self._lights_scale )
         return leds
 
+MEAN_INTENSITY = 0
+
+class LoadLEDOutputIntensities(object):
+    """
+    Use this object as a mixin helper class to load in the LED lumens outputs (intensities), sorted by index values (from 0 to 'qty')
+    Usage: 
+    - In Constructor
+        LoadLEDOutputIntensities.__init__(self)
+        qty = len(led_vertices)
+        self.intensities = self.load_led_intensities( qty )
+
+    - In default.properties
+        [LightOutput]
+        light.output_intensity_from_index.column_number=(int, default=5, range=[0-99])
+        light.output_intensity_from_index.filename_path=(string, path/to/file.csv)
+        light.output_intensity_from_index.allow_default=(boolean, default=True)
+        light.output_intensity_from_index.default_value=(float, default=1.0, range=[0.0-10.0])
+    """
+    def __init__(self):
+        self._source_col_num = property_to_number(section="LightOutput", key="light.output_intensity_from_index.column_number", vmin=0, vmax=99, vtype=int)
+        self._source_filename = property_to_string(section="LightOutput", key="light.output_intensity_from_index.filename_path")
+        
+        self._enforce_default = property_to_boolean(section="LightOutput", key="light.output_intensity_from_index.enforce_default")
+        self._allow_default = property_to_boolean(section="LightOutput", key="light.output_intensity_from_index.allow_default")
+        self._default_value = property_to_number(section="LightOutput", key="light.output_intensity_from_index.default_value", vmin=0.0, vmax=10.0, vtype=float)
+
+    def load_led_intensities(self, quantity_of_leds):
+        l = []
+        if self._enforce_default:
+            l = [self._default_value]*quantity_of_leds
+        else:
+            l = self.__load_led_intensities(quantity_of_leds)
+        
+        # l = 5 * np.random.random_sample(quantity_of_leds)
+        #l = #[v-0.5 for v in l]
+        set_once_key_value_pair(section="MEAN_INTENSITY", key="MEAN_INTENSITY", value=np.mean(l))
+        return l
+
+    def __load_led_intensities(self, quantity_of_leds):
+        assert len(self._source_filename) != "", "Empty string for light.output_intensity_from_index.filename_path, cannot load intensities from file."
+        assert type(quantity_of_leds) is int and quantity_of_leds > 0, "Entered quantity_of_leds for light.output_intensities is invalid or 0."
+
+        l = read_column(self._source_filename, skip_header=False, column_num=self._source_col_num, quantity=quantity_of_leds)
+
+        def __typecast_intensities(l):
+            try:
+                l = [float(v) for v in l]
+            except ValueError as e:
+                type_cast_succeeded = False
+                assert type_cast_succeeded, "ValueError during typecast to float of loaded intensities values. In load_led_intensities(). Source data: "+str(l)
+            return l
+        
+        def __validation(l, quantity_of_leds):
+            incorrect_quantity_of_intensity_values  = not len(l) == quantity_of_leds
+            incorrect_type_of_intensity_value       = not all([type(v) is float for v in l])
+            if incorrect_quantity_of_intensity_values:
+                print("Quantity of Light Intensity Values not equal to specified quantity")
+                
+            if incorrect_type_of_intensity_value:
+                print("Validation warning: Light Intensity Value not of type float")
+
+            if incorrect_quantity_of_intensity_values or incorrect_type_of_intensity_value:
+                if self._allow_default:
+                    has_valid_default_value = type(self._default_value) is float and self._default_value >= 0 and self._default_value <= 10.0
+                    if has_valid_default_value:
+                        print("Warning: applying default value for Light Intensity of "+str(self._default_value))
+                        l = [self._default_value]*quantity_of_leds
+                    else:
+                        print("Invalid default value for Light Intensity of "+str(self._default_value)+" Cannot continue. Exiting.")
+                        import sys; sys.exit()
+                else:
+                    print("Invalid Light Intensity Value data. Cannot continue. Exiting.")
+                    import sys; sys.exit()
+            else:
+                # all is good
+                pass
+            return l
+
+        l = __typecast_intensities(l)
+        l = __validation(l, quantity_of_leds)
+        return l
+
 
 class LoadLEDIndexes(object):
     """
@@ -294,7 +376,7 @@ class LoadEdgeFramePositions(LoadFramePositions):
         return return_frame
 
 
-class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePositions):
+class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePositions, LoadLEDOutputIntensities):
     """
     Evaluate the standard deviation of lambertian illuminance on surfaces of a target model, using a specified set of light vertex positions, i.e. Lettvin's diffuse positions.
     Jan 2017.
@@ -306,14 +388,18 @@ class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePosition
         self.frame = self.get_frame()
         self.shortname = "Raw Lettvin Positions"
 
+        LoadLEDOutputIntensities.__init__(self)
+        qty = len(self.leds_vertices)
+        self.intensities = self.load_led_intensities( qty )
+
     def display(self, triangles):
         EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
             
     def evaluate( self, triangles ):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
 
     def tune( self, triangles ):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
 
 
 class VertexMappedPositionEvaluator(RawPositionEvaluator):
@@ -323,6 +409,7 @@ class VertexMappedPositionEvaluator(RawPositionEvaluator):
     Jan 2017.
     """
     def __init__(self, kwords):
+        RawPositionEvaluator.__init__(self, kwords)
         LoadLEDPositions.__init__(self)
         LoadFramePositions.__init__(self, hardcoded_leds=kwords['all_leds'])
         self.leds_vertices = self.load_leds_positions()
@@ -358,6 +445,7 @@ class Wrapper_EdgeXMappedPositionEvaluator(VertexMappedPositionEvaluator, LoadEd
     Jan 2017.
     """
     def __init__(self, kwords, NUM_OF_VERTICES_PER_EDGE):
+        RawPositionEvaluator.__init__(self, kwords)
         LoadLEDPositions.__init__(self)
         LoadEdgeFramePositions.__init__(self, kwords, NUM_OF_VERTICES_PER_EDGE)  # kwords['all_leds'] = [] -- should contain the hardcoded frame vertex positions.
         self.frame = self.get_frame()
@@ -378,7 +466,7 @@ class EdgeXMappedPositionEvaluator(Wrapper_EdgeXMappedPositionEvaluator):
         q = property_to_number(section="FrameModel", key="frame.number_of_vertices_per_edge", vmin=1, vmax=10, vtype=int)
         Wrapper_EdgeXMappedPositionEvaluator.__init__(self, kwords, NUM_OF_VERTICES_PER_EDGE=q+1 if q is not None else 3)
 
-class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePositions):
+class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePositions, LoadLEDOutputIntensities):
     """
     Load a set of dome index positions from a CSV results file, depending on column number. 
     Map those to indexes to vertices of the dome.
@@ -393,16 +481,20 @@ class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePo
         self.leds_vertices = self.get_vertices_from_indexes(leds_indexes, self.frame)
         self.shortname = "LED Vertex Positions from Indexes."
 
+        LoadLEDOutputIntensities.__init__(self)
+        qty = len(self.leds_vertices)
+        self.intensities = self.load_led_intensities( qty )
+
     def display(self, triangles):
         EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
 
     def evaluate(self, triangles):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
 
     def tune( self, triangles ):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
 
-class Wrapped_EdgeXIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadEdgeFramePositions):
+class Wrapped_EdgeXIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadEdgeFramePositions, LoadLEDOutputIntensities):
     """
     Load a set of dome EDGE index positions from a CSV results file, depending on column number.
     Load properties values in from properties file, under section ['EvaluateEdgeMapSingleResultsFile]'.
@@ -419,14 +511,18 @@ class Wrapped_EdgeXIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, Load
         self.leds_vertices = self.get_vertices_from_indexes(leds_indexes, self.frame)
         self.shortname = "LED Edge"+str(NUM_OF_VERTICES_PER_EDGE-1)+" Vertex Positions from Indexes."
 
+        LoadLEDOutputIntensities.__init__(self)
+        qty = len(self.leds_vertices)
+        self.intensities = self.load_led_intensities( qty )
+
     def display(self, triangles):
         EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
 
     def evaluate(self, triangles):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
 
     def tune(self, triangles):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices)
+        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
 
 
 

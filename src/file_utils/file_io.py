@@ -57,11 +57,22 @@ def write_to_latex_table(rows, header, path, filename):
         s = s.replace("\\textbackslash{}","\\")
         write_to_file(s, path, filename, append_newline=True)
 
+def read_column(filename, skip_header=False, column_num=0, quantity=0):
+        """
+        This reads in the entire file, specified by filename. 
+        Trucates the file, Separates the specified column and returns.
+        """
+        l = read_in_csv_file_to_list_of_lists(filename, skip_header)
+        l = l[:quantity]
+        column = [row[column_num] for row in l]
+        return column
 
 def read_in_csv_file_to_list_of_lists(filename, skip_header=False):
         """
         Read in csv file
         """
+        if not os.path.exists(filename):
+                print("Error: Requested file does not exist: "+str(filename))
         with open(filename, 'rb') as f:
             reader = csv.reader(f)
             if skip_header == True:     # either true or 1.

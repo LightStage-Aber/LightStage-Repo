@@ -21,9 +21,9 @@ class IterativeRegression():
      This is greedy (best-first) limited local optimsation. It uses the following properties file parameters.
 
          [BrightnessControlTuner]
-         tune.regression.threshold=0.005 [Range: >=0]
-         tune.regression.max_iterations=100 [Range: >=1]
-         tune.regression.debug=False [In: True or False]
+         tune.regression.threshold=0.005 [Range: >=0] - Threshold score to beat before terminating. (Stopping criteria 1)
+         tune.regression.max_improvement_attemps_on_best_score=10 [Range: >=1] - Number of attempts to improve on the current best score before accepting that as the final score. (Stopping criteria 2)
+         tune.debug=False [In: True or False] - Print progress of search evaluations to STDOUT.
      """
     def __init__(self, evaluator_func, update_func):
         self._evaluator_func = evaluator_func
@@ -33,9 +33,9 @@ class IterativeRegression():
     def __set_properties(self):
         dict_properties = getPropertiesFile("../properties/default.properties")
         self.threshold = float(dict_properties['BrightnessControlTuner']['tune.regression.threshold'])
-        self.max_iterations = int(dict_properties['BrightnessControlTuner']['tune.regression.max_iterations'])
+        self.max_iterations = int(dict_properties['BrightnessControlTuner']['tune.regression.max_improvement_attemps_on_best_score'])
 
-        self.DEBUG = property_to_boolean(section="BrightnessControlTuner", key="tune.regression.debug")
+        self.DEBUG = property_to_boolean(section="BrightnessControlTuner", key="tune.debug")
 
         assert isinstance(self.threshold, Number) and self.threshold >= 0.0, \
             "Residual error threshold should be positive float: " + str(self.threshold) + ". Type: "+str(type(self.threshold))
@@ -43,6 +43,7 @@ class IterativeRegression():
             "Max search iterations should be positive int: " + str(self.max_iterations) + ". Type: " + str(type(self.max_iterations))
 
     def start(self, start_data):
+        _starting_score = None
         default_value = sys.maxsize
         data = start_data[:]
 
@@ -52,22 +53,25 @@ class IterativeRegression():
             rounds += 1
             data = self._update_func(data)
             x = self._evaluator_func(data)
+            _starting_score = x if _starting_score is None else _starting_score
 
             if self.DEBUG:
-                print(str(rounds)+") Score: "+str(x)+" - (r"+str(current_minimum.count)+"/"+str(rounds-current_minimum.count) + " Best: " + str(current_minimum.value) +")")
+                print("Round: "+str(rounds)+") - IterativeRegression - Score (Std/Qty): "+str(x)+" - (Best Round:"+str(current_minimum.count)+", Since Best Round:"+str(rounds-current_minimum.count) + ", Best Score: " + str(current_minimum.value) +")")
 
             is_best = x < current_minimum.value
             if is_best:
                 current_minimum = _FindMinimum(value=x, data=data, count=rounds, rounds=None)
             has_been_evaluated = current_minimum.value != default_value
-            has_exceeded_max_iterations_on_this_value = (current_minimum.count + self.max_iterations) <= rounds
-            is_threshold_exceeded = x < self.threshold
+            is_threshold_exceeded = x < self.threshold                                                          # Stopping criteria 1
+            has_exceeded_max_iterations_on_this_value = (current_minimum.count + self.max_iterations) <= rounds # Stopping criteria 2
             if is_threshold_exceeded or (has_been_evaluated and has_exceeded_max_iterations_on_this_value):
                 break
         best_value = current_minimum.value
         best_data = current_minimum.data
         best_count = current_minimum.count
         current_minimum = _FindMinimum(value=best_value, data=best_data, count=best_count, rounds=rounds)
+        if self.DEBUG:
+            print("Start Score: "+str(_starting_score)+" Improved Score from "+str(rounds)+" trials: "+str(best_value))
 
         return current_minimum
 

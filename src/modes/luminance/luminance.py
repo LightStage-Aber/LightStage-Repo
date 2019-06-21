@@ -110,7 +110,7 @@ class MeasureReflectanceIntoCameras(EvaluatorGeneric):
                                     rad,d = get_angle_from_reflection_to_camera(c, r, view)
                                     
                                     blinn_spec           = reflect_models.BlinnPhong_specular(incident_vector=l, view_vector=view, surface_norm=n1, shininess_exponent=MAT_SHININESS)
-                                    lamb_diffuse         = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1 )
+                                    lamb_diffuse         = reflect_models.Lambert_diffuse( incident_vector=l, surface_norm=n1, intensity=1.0 )
 
                                     this_led_score       = self.get_reflectance_score( lamb_diffuse , blinn_spec )
                                     led_score           += this_led_score

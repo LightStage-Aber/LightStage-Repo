@@ -4,7 +4,7 @@ from options import property_to_string
 import tuners
 
 
-class TuningInputDataContainer(namedtuple('_A', ['surface_tris', 'led_vertices'])):
+class TuningInputDataContainer(namedtuple('_A', ['surface_tris', 'led_vertices', 'intensities'])):
     pass
 class TuningOutputDataContainer(namedtuple('_A', ['intensities', 'surface_scores'])):
     pass

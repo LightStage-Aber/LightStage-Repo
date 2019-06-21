@@ -84,6 +84,19 @@ def __get_key_value_pair(section, key):
     k = "['" + str(section) + "']['" + str(key) + "']"
     return k, v
 
+def set_once_key_value_pair(section, key, value):
+    d = __getPropertiesFile()
+    if section in d:
+        if key in d[section]:
+            pass # already set
+        else:
+            # New key in existing section, set it:
+            d[section][key] = value
+    else:
+        # New section and key, set it:
+        d[section] = {}
+        d[section][key] = value
+
 def read_properties_from_file(path_to_file="../properties/default.properties"):
     """
     @deprecated in favour of wrapper property_* functions for specific types.

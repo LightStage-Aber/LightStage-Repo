@@ -13,7 +13,7 @@ def is_front_facing_reflection(tri, l, r ):
     reflection_deg = d    
 
     if round(incident_deg, 4) != round(reflection_deg, 4):
-        print "incident "+str(round(incident_deg, 4))+" and reflection "+str(round(reflection_deg, 4))+" angles, from surface normal, not equal."
+        print("incident "+str(round(incident_deg, 4))+" and reflection "+str(round(reflection_deg, 4))+" angles, from surface normal, not equal.")
         raise ValueError
     
     total_angle = incident_deg+reflection_deg

@@ -31,7 +31,7 @@ class AbstractTuner():
     def _get_extra_data(self, tuning_input_data_container):
         self._led_vertices = tuning_input_data_container.led_vertices
         self._surface_tris = tuning_input_data_container.surface_tris
-        self._start_intensities = [1.0] * len(tuning_input_data_container.led_vertices)
+        self._start_intensities = tuning_input_data_container.intensities
         self._surface_values = get_surface_evaluations(self._surface_tris, self._led_vertices, intensities=self._start_intensities)
 
 
@@ -49,7 +49,7 @@ class TuneUsingScipyMinimize(AbstractTuner):
         self._surface_values = get_surface_evaluations(self._surface_tris, self._led_vertices, intensities=data)
         normalised_std = np.std(self._surface_values) / len(self._start_intensities)
         if self.DEBUG:
-            print(str(self.__rounds) + ") Score: " + str(normalised_std))
+            print("ScipyOptimize Eval Round: "+str(self.__rounds) + ") Score (Std/Qty): " + str(normalised_std) +" Intensities: [0-9]" + str(data[:10])+", Mean (Int): "+str(np.mean(data)) )
         return normalised_std
 
 
@@ -67,7 +67,7 @@ class TuneUsingIterativeRegressionPDS(AbstractTuner):
         self._surface_values = get_surface_evaluations(self._surface_tris, self._led_vertices, intensities=data)
         normalised_std = np.std(self._surface_values) / len(self._led_vertices)
         if self.DEBUG:
-            print(str(self.__rounds) + ") Score: " + str(normalised_std))
+            print("Round: "+str(self.__rounds) + ") - Evaluate() - Score (Std/Qty): " + str(normalised_std) +" Intensities: [0-4]" + str(data[:5])+", Mean (Int): "+str(np.mean(data)) )
         return normalised_std
 
     def update(self, data):

@@ -62,13 +62,13 @@ See `Usage Examples` below and take a read of `options switches` and `configurat
 
         
 
-# Experiment Framework:
+# Experiment Framework:  `(-m2)`
 
 Simply put, the tool is to evaluate light positions or search for positions that are optimised for data capture for 3d reconstruction. 
 * Current evaluations measure physical effects of light. 
 * Future evaluations may evaluate effects of positions in calibrated photometry.
 
-A typical experiment might use a spherical lightstage frame on which lights are positioned to illuminate a typically spherical target object. The light received (illuminance) on each surface of the target object is calculated. The balance (i.e. a relative or normalised standard deviation) of the light received across the target, provides a measure of evaluation; this key metric, we call `evenness`. Other statistical measures are also reported. Variations include differently structured frames, different targets, light positions and quantities.
+A typical experiment might use a spherical lightstage frame on which lights are positioned to illuminate a typically spherical target object. The light received (illuminance) on each surface of the target object is calculated. The balance (i.e. a relative or normalised standard deviation) of the light received across the target, provides a measure of evaluation; this key metric, we call `evenness`. Other statistical measures are also reported. Variations include differently structured frames, different targets, light positions, quantities and light power output levels.
 
 #### The state-of-art lightstages already simulated and evaluated include [Debevec's LS3/LS5 at USC, US](https://pdfs.semanticscholar.org/01ec/1c832e5af0c108c6c86f0eeb9f3958bbdb64.pdf) 156 LED icosahedron 2v, [Dutta & Smith in 2010 at UoYork, UK](http://etheses.whiterose.ac.uk/id/eprint/1498) 41 LED icosahedron 2v, and [Kampouris & Ghosh at ICL, UK](https://wp.doc.ic.ac.uk/rgi/project/multispectral-light-stage/) 168 sphere of rings design and [our stage at Aber Uni, UK](http://www.hannahdee.eu/blog/?p=1503) which is uses a icosahedron 3v structure. 
 
@@ -122,22 +122,27 @@ Key experiment statistical metrics are printed to STDOUT.
 
 All experiment data is recorded to a CSV file (filename specified in STDOUT) and written to the directory specifed in `results_file.results_output_file_path_prefix=` or `light.results_output_file_path_prefix=` in the `./properties/default.properties` configuration file. Default is a subdirectory of `./results/`.
 
-The output filename corresponds to the experiment type (for example, `*_VertexIndexPositionEvaluator.csv`, corresponds to `-e8` experiments).
+The output filename corresponds to the experiment type (for example, `*_VertexIndexPositionEvaluator.csv`, corresponds to `-e3` experiments (Joint or "Vertex" Positions from Index).
 
-The data output format corresponds to list data specified in the functions of `./src/modes/illuminance/helper_illuminance.py`.
+Below is a list of the CSV column header titles (correct at time of writing):
+
+    [Qty_Selected_LED_Indexes, Qty_Available_LED_Indexes, total_surface_lambertian_score, normalised_stdev_n, normalised_stdev_n_intensity, MEAN_INTENSITY, UNIFORM_LED_INTENSITIES, coefficient_of_stdev, coefficient_of_iqr_median, surface_mean_score, surface_stdev, surface_median, surface_iqrange, surface_min, surface_max, Evaluator_Shortname, source_filename, Evaluator_ClassName, frame_objfilename, frame_scale, obj.TARGET_SHAPE, obj.TARGET_SCALE, obj.TARGET_TRANSLATION, surfaces_raw_data, timestamp, light_indexes, light_vertices, light_intensities] 
+
+Details of the output data format are specified in the functions of `./src/modes/illuminance/helper_illuminance.py`. 
+
 
 ## Details of Experiment Configurations
 
 The different types of configuration variations can be configured and executed as follows:
 
-#### Target Object: 
+### Target Object: 
 See `run.py` options switches.
 
     - specify target (.obj)         -p '/path/to/tri-surface-WaveFront-Object-file.obj'
     - adjust target scale           -s scale (relative to frame, default is 1)
     - adjust target position        -t translate position
         
-#### Frame:
+### Frame:
 See configuration under `default.properties [FrameModel]` section.
 
     - specify target (.obj)                 frame.objfilename=path/to/Poly-Face-WaveFront-Object-file.obj
@@ -147,14 +152,14 @@ See configuration under `default.properties [FrameModel]` section.
     - specify frame EdgeN mounting points   frame.number_of_vertices_per_edge=1, Edge1, Edge2,.. Edge10.
     
 
-#### Lights by Vertex Positions:
+### Lights by Vertex Positions:
 See configuration under `default.properties [LightPositions]` section.
 
     - specify light positions from file     light.objfilename=path/to/Poly-Face-WaveFront-Object-file.obj - This specifies quantity and vertex positions, in WaveFront OBJ format.
     - specify results output file prefix    light.results_output_file_path_prefix=/path/
     - adjust vertex position scale          light.scale= (relative to target object, should correspond to frame.scale, default is 8) Usage includes Euclidean k-nearest neighbour mapping of floating light vertex positions to frame vertex positions.
 
-#### Lights by Frame Index Positions: 
+### Lights by Frame Index Positions: 
 See configuration under `default.properties [LightIndexPositions]` section.
 
     - specify light index positions from file       results_file.csvfilename=path/to/filename.csv - This contains a binary column (0/1). Row number corresponds to vertex index number from the frame's OBJ file.
@@ -163,7 +168,28 @@ See configuration under `default.properties [LightIndexPositions]` section.
     - specify results output file prefix            results_file.results_output_file_path_prefix=/path/
 
 
-## Experiment Configurations to Mount LED Lights to Frame Edges
+### Light Intensity Configuration (Output per Indexed Light): 
+See configuration under `default.properties [LightOutput]` section.
+
+This section of configuration let's us define a set of light intensities, either by (1) an `enforced_default` or by (2) a `column_number` specified within a CSV file defined by `filename_path`. The baseline value is 1.0.
+
+    light.output_intensity_from_index.enforce_default=True
+    light.output_intensity_from_index.default_value=1.0
+    light.output_intensity_from_index.allow_default=False
+    light.output_intensity_from_index.column_number=4
+    light.output_intensity_from_index.filename_path=../results/Control_91-92_March2017/edges_l3926.csv
+
+* **Non-uniform light intensities** can improve target lighting balance, see the **Brightness Control Tuning** section for the automated improvement procedure.
+
+* **Uniform light intensities** have no effect on balance peformance.
+
+* The `Readme First` recommendation is to modify and compare only between variations of a single dependent variable (e.g. positions or intensities or target or frame, but not multiple). Drawing statistical comparisons, while modifying the position sets and these intensity values, can be unreliable.
+
+* Further explanation of these configuration options and their statistical analysis are released on the accompanying website.
+
+
+
+# Experiment Configurations to Mount LED Lights to Frame Edges
 
 In real world Light Stages, the LED lights can be mounted anywhere on the frame. The `frame.number_of_vertices_per_edge` parameter in the `default.properties` config file defines the number of discrete mounting points along each frame edge.
 
@@ -173,8 +199,12 @@ In real world Light Stages, the LED lights can be mounted anywhere on the frame.
 
 [This video](https://www.youtube.com/watch?v=ESvpB2qFDgc&list=PLDt0joxz3D16g-DcYcdirf05QcMTTpTiz&index=1) shows examples of `Edge1` and `Edge2` features. On right, Ghosh's design uses `Edge1`. In the middle, Debevec's LS3/5 design uses `Edge2`. On left, Dutta's design does not use edge mounting.
 
+Edge 1 | Edge 2| Edge 4
+------|------|------
+![Edge 1 Example](https://buildalightstage.files.wordpress.com/2019/06/edge1.png) | ![Edge 2 Example](https://buildalightstage.files.wordpress.com/2019/06/edge2.png) | ![Edge 4 Example](https://buildalightstage.files.wordpress.com/2019/06/edge4.png)
 
-# Display Experiment Environment
+
+# Display Experiment Environment `(-m1)`
 
 The tool will visually display the experiment configuration (without running the evaluation). This helps with: 
 
@@ -183,31 +213,59 @@ The tool will visually display the experiment configuration (without running the
 
 Together with the associated **configuration file** and **options switches**, run with:
 
-    python run.py -m1
+    python run.py  -m1   -e<3,4,7,8,9>
 
 Switch back to experiment mode with:
 
-    python run.py -m2
 
-# Brightness Control Tuning
+    python run.py  -m2   -e<3,4,7,8,9>
 
-Given a set of light positions, the illumination balance can often be improved by fine tuning the balance of intensity (lumens output or power) emitted by each LED light. This feature, enabled by mode `-m3`, provides two techiques to improve the `evenness` balance of a set of LEDs. 
+Display example showing an Edge 3 dome visualisation  |
+-------------------|
+* Created an with `Edge 3` configuration set-up in `properties/default.properties` 
+* Run as `python run.py -m1 -e4`|
+![Demo mode](https://buildalightstage.files.wordpress.com/2019/05/myimage-1.gif)|
 
-1. `iterative regression` reduces the target object's surface illumination normalised standard deviation (`evenness` metric) by iteratively modifying the LED with an *illuminance score* furthest from mean, thus lowering the standard deviation.
-2. `scipy.optimize.basinhopping` uses the `L-BFGS-B` search method to optimise the `evenness` metric.
 
-Both methods have a set of parameters to configure in `./properties/default.properties` under section `[BrightnessControlTuner]`. The optimisation search stopping criteria include iterations and thresholds.
 
-Together with the associated **configuration file** and **options switches**, run with:
+# Brightness Control Tuning `(-m3)`
 
-    python run.py -m3
+Given a set of light positions, the illumination balance can often be improved by fine tuning the balance of intensity (lumens output or power) emitted by each LED light. This feature, enabled by mode `-m3`, provides two strategies to improve the `evenness` balance of a set of LEDs.
 
-Recommendations and Reading:
-1. Recommend to start with `iterative regression`, which has been *alpha* tested.
+### Optimisation Types:
+
+1. `iterative regression` reduces the target object's surface illumination normalised standard deviation (`evenness` metric) by iteratively modifying the light output intensity value of the LED with an *illuminance score* furthest from the mean. This is done to lower the standard deviation of the target's surface illumination scores.
+2. `scipy.optimize.basinhopping` uses the `L-BFGS-B` search method to optimise the `evenness` metric, by modifying the array of light intensity values within a bounded (min/max) range.
+
+Both methods have a set of parameters to configure in `./properties/default.properties` under section `[BrightnessControlTuner]`. The optimisation search stopping criteria include iterations and thresholds. 
+
+### How to Run:
+
+The brightness control tuning can be applied to all forms of light positions sets (i.e. Index `-e3/4` and Vertex `-e7/8/9`). 
+
+Within the **configuration file** and **options switches** the optimisation stopping criteria and frame lighting design conditions should be set-up. 
+
+Then, run as:
+
+    python run.py -m3 -e<3,4,7,8,9>
+
+### Data Output:
+
+* The key data output from the tuning is an array of new **light output intensities**. 
+
+* These are light output values that correspond to the **ordered** (by vertex order or by index order, depending on the trial) light positions. 
+
+* The intensity values can inform the power output per light in a physical light stage control system. It is advisable to scaling these values into a [0.0 to 1.0] range, then translate into physical light's control's power (i.e. wattage) range (e.g. [0 to 256]).
+
+* The improved **light output intensities** set is written into the `light_intensities` column, writen to the output `Results_Illuminance_*.csv` file.
+
+#### Recommendations and Reading:
+1. Recommend to start with `iterative regression`, which has been *beta* tested. For sub-optimal position sets, this algorithm can rapidly improve scores. For already optimised positions, this can perform poorly.
 2. Read the algorithms (`./src/modes/brightness_control_tuning/`), documentations (e.g. scipy / pydocs) and configuration file settings for more details.
-3. Read and run the unit tests in `./test/test_BrightnessControl.py` with nose2 or by executing the py file.
+3. Read and run the unit tests and their configuration changes in `./test/test_BrightnessControl.py` with nose2 or by executing the py file.
 
 
+# OTHER USEFUL DETAILS
 
 ### KEYBOARD/MOUSE CONTROLS:
 

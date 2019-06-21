@@ -3,9 +3,9 @@ from __future__ import division
 
 from OpenGL.GL import GL_FRONT, GL_AMBIENT_AND_DIFFUSE, GL_SPECULAR, GL_SHININESS, glMaterialfv, glMaterialf
 
+import numpy as np
 import time;     currentMillis = lambda: int(round(time.time() * 1000))
-from illuminance.helper_illuminance import   get_surface_evaluations, are_all_surfaces_hit, \
-                                                    write_led_set_lambertian_scores_appended_result_file
+from illuminance.helper_illuminance import   get_surface_evaluations, are_all_surfaces_hit, get_statistics_on_data, write_illumination_result_data_to_file, write_led_set_lambertian_scores_appended_result_file
 from visualisations import draw_point, draw_wire_sphere, make_triangle_face, draw_wire_frame_of_obj_from_filename, draw_text
 from brightness_control_tuning.tuning_selector import BrightnessControlStrategy, TuningInputDataContainer, TuningOutputDataContainer
 
@@ -56,59 +56,84 @@ class EvaluatorGeneric(object):
         #draw_text("", 10, 10, DISABLE_LIGHTING=False, translate_point=leds_vertices[0])
         
 
-    def evaluate(self, triangles, leds_vertices):
+    def evaluate(self, triangles, leds_vertices, intensities):
         """
         Evaluate the standard deviation of lambertian illuminance of the terget shape, from the loaded leds vertex positions.
         """
-        surfaces = get_surface_evaluations(triangles, leds_vertices)
+        surfaces = get_surface_evaluations(triangles, leds_vertices, intensities)
         if not are_all_surfaces_hit(surfaces):
             print("---FAILED--- to hit all surfaces. Result not written to file.")
             # assert are_all_surfaces_hit(surfaces) , "FAILED: Some surfaces were not hit by these LED Light Vertex positions. Result not written to file. Aborting"
         else:
-            extra_row_data = [self.shortname , self._source_filename, type(self).__name__]
-            row = write_led_set_lambertian_scores_appended_result_file(leds_vertices,
-                                                                       surfaces,
-                                                                       leds_vertices,
-                                                                       filename_suffix="_"+type(self).__name__,
-                                                                       path_prefix=self._path_prefix,
-                                                                       extra_row_data=extra_row_data)
-            normalised_stdev = float(row[4]) / len(leds_vertices)
-            relative_stdev = float(row[4]) / float(row[3])
-            median = float(row[5])
-            iqr = float(row[6])
+            header_data, row_data = get_statistics_on_data( surfaces=surfaces, all_leds=leds_vertices, leds_vertex_set=leds_vertices, intensities=intensities, 
+                                                            evaluator_shortname=self.shortname , source_filename=self._source_filename, evaluator_class=type(self).__name__ )
+            write_illumination_result_data_to_file(header_data, row_data, filename_suffix="_"+type(self).__name__, path_prefix=self._path_prefix)
+            result_dict_data = dict(zip(header_data, row_data))
+                        
+            self.__print_evaluation_results( result_dict_data )
 
-            print("Evaluator type: " + str(type(self).__name__))
-            print("Source Filename: " + str(self._source_filename))
-            print("Finished with standard deviation:" + str(row[4]))
-            print("Finished with normalised standard deviation:" + str(normalised_stdev))
-            print("Finished with Relative Standard Deviation/ Coefficient Variation (std/mean):" + str(relative_stdev))
-            print("Finished with Median:" + str(median))
-            print("Finished with IQR:" + str(iqr))
-            print("Finished with Relative IQR (IQR/Median):" + str(iqr/median))
-            print("Finished with Num of LEDS: " + str(len(leds_vertices)))
 
-    def tune(self, triangles, led_vertices ):
+    def tune(self, triangles, leds_vertices, intensities ):
         """
         Tune the intensities of the mapped leds vertex positions to balance the standard deviation.
         """
-        surfaces = get_surface_evaluations(triangles, led_vertices)
+        _start_intensities = intensities[:]
+        surfaces = get_surface_evaluations(triangles, leds_vertices, intensities)
         if not are_all_surfaces_hit(surfaces):
             print("---FAILED--- to hit all surfaces. Result not written to file.")
         else:
-            input_data = TuningInputDataContainer(surface_tris = triangles , led_vertices = led_vertices)
+            input_data = TuningInputDataContainer(surface_tris=triangles , led_vertices=leds_vertices, intensities=intensities)
             output_data = BrightnessControlStrategy().selector(input_data)
 
-            extra_row_data = [self.shortname , type(self).__name__, output_data.intensities]
-            row = write_led_set_lambertian_scores_appended_result_file(all_leds=input_data.led_vertices,
-                                                                       surfaces=output_data.surface_scores,
-                                                                       leds_vertex_set=input_data.led_vertices,
-                                                                       filename_suffix="_tuning",
-                                                                       path_prefix=self._path_prefix,
-                                                                       extra_row_data=extra_row_data)
-            print("Evaluator type: " + str(type(self).__name__))
-            print("Source Filename: " + str(self._source_filename))
-            print("Finished with standard deviation:" + str(row[4]))
-            print("Finished with normalised standard deviation:" + str( float( row[4] / len(input_data.led_vertices) )))
-            print("Finished with Num of LEDS: "+str(len(input_data.led_vertices)))
-            print("Count of LEDs with Changed Brightness: " + str(len([x != 1.0 for x in output_data.intensities])))
-            print("Updated Brightness Intensity Values: " + str(output_data.intensities))
+            intensities = output_data.intensities
+            surfaces = output_data.surface_scores
+
+            # Result data:
+            header_data, row_data = get_statistics_on_data( surfaces=surfaces, all_leds=leds_vertices, leds_vertex_set=leds_vertices, intensities=intensities, 
+                                                            evaluator_shortname=self.shortname , source_filename=self._source_filename, evaluator_class=type(self).__name__ )
+            write_illumination_result_data_to_file(header_data, row_data, filename_suffix="_"+type(self).__name__, path_prefix=self._path_prefix)
+            result_dict_data = dict(zip(header_data, row_data))
+
+            self.__print_evaluation_results( result_dict_data )
+            self.__print_tuning_results(intensities, _start_intensities)
+    
+
+    
+    """
+        ------- Private functions follow --------
+    """
+
+    def __print_evaluation_results(self, result_dict_data):
+        """
+            Private function to output result data to STDOUT after evaluation and tuning operations completes.
+        """
+        print("Evaluator type: " + str(type(self).__name__))
+        print("Source Filename: " + str(self._source_filename))
+        print("Finished with standard deviation:" + str( result_dict_data["surface_stdev"] ))
+        if not result_dict_data["UNIFORM_LED_INTENSITIES"]:
+            print("Warning: Be aware that the normalised standard deviation (Std/Qty) metric is *unreliable* when adjusting Qty and using non-uniform light intensities (a second dependent variable).")
+        # -------------------------------------------------------------------------------------------------------------
+        # Do not change the format of this STDOUT line, tests will fail.
+        # The test harness depends on this output string's exact content:
+        # @todo: make this not a hack: Introduce a results object, accessible from test harness.
+        print("Finished with normalised standard deviation:" + str(result_dict_data["normalised_stdev_n"]))
+        # -------------------------------------------------------------------------------------------------------------
+        print("Normalised standard deviation is std(surface lumens)/num_leds")
+        print("Finished with Evenness (/n):" + str(result_dict_data["normalised_stdev_n"]))
+        print("Finished with Evenness (/n/mean_intensity):" + str(result_dict_data["normalised_stdev_n_intensity"]))
+        print("Finished with Relative Standard Deviation/ Coefficient Variation (std/mean):" + str(result_dict_data["coefficient_of_stdev"]))
+        print("Finished with Median:" + str(result_dict_data["surface_median"]))
+        print("Finished with IQR:" + str(result_dict_data["surface_iqrange"]))
+        print("Finished with Relative IQR (IQR/Median):" + str(result_dict_data["coefficient_of_iqr_median"]))
+        print("Finished with Num of LEDS: " + str( result_dict_data["Qty_Available_LED_Indexes"] ))
+
+
+    def __print_tuning_results(self, intensities, _start_intensities):
+        """
+            Private function to output result data to STDOUT after evaluation and tuning operations completes.
+        """
+        print("Count of LEDs with changed output intensities: " + str(  [x != y for x,y in zip(intensities, _start_intensities)].count(True)  )+" of "+str(len(intensities)))
+        print("Mean Difference of changed output intensities: " + str(  (np.mean(intensities) - np.mean(_start_intensities)) ) + " Prior:" + str(np.mean(_start_intensities))+ " Post:" + str(np.mean(intensities)) )
+        print("-----------------------------------------------------")
+        print("(See Output Results File for Tuned Intensity Values)")
+        print("-----------------------------------------------------")

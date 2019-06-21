@@ -22,7 +22,7 @@ def BlinnPhong_specular(incident_vector, view_vector, surface_norm, shininess_ex
     
 
 
-def Lambert_diffuse( incident_vector, surface_norm, intensity=1.0 ):
+def Lambert_diffuse( incident_vector, surface_norm, intensity ):
     """
     Calculate lambert's cosine law of diffuse reflectance.
 
