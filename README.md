@@ -15,7 +15,7 @@ Take a read below for details of those features, and how to use them.
 
 Feel free to check out the YouTube videos including [this one](https://www.youtube.com/watch?v=ESvpB2qFDgc&list=PLDt0joxz3D16g-DcYcdirf05QcMTTpTiz&index=1) showing different Light Stage frames under the simulation: 
 
-[![Video: LightStage Simulation](https://pmdscully.files.wordpress.com/2019/06/dutdebghosh_vid.png)](https://www.youtube.com/watch?v=ESvpB2qFDgc&list=PLDt0joxz3D16g-DcYcdirf05QcMTTpTiz&index=1)
+[![Video: LightStage Simulation](https://buildalightstage.files.wordpress.com/2019/05/myimage.gif)](https://www.youtube.com/watch?v=ESvpB2qFDgc&list=PLDt0joxz3D16g-DcYcdirf05QcMTTpTiz&index=1)
 
 # INSTALLATION & PREREQUISITES
     Python2.7.x (**Python 3 compatibility migration underway**).
