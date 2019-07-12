@@ -447,7 +447,8 @@ class OldToolSelector_Untested(ToolSelector):
 def draw_selected_leds( camerasVertices, triangles, shape_name ):
         best_LEDs   = get_best_leds_from_file()
         score       = get_best_score(best_LEDs)
-        leds        = draw_dome( scale , show_selected_leds=best_LEDs )
+        # leds        = draw_dome( scale , show_selected_leds=best_LEDs )
+        leds = []
         qty_leds    = len(best_LEDs) if type(best_LEDs) is list else -1
         filename    = LED_SCORE_LOG_FILE if os.path.exists(LED_SCORE_LOG_FILE) else "(Press L to load file)"
         for tri in triangles:

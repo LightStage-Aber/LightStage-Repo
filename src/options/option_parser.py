@@ -14,7 +14,7 @@ def get_parsed_commandline_options():
                           action="store", dest="EVALUATION", default=1, metavar='NUM', type=int,
                           help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode. 3=Tune-evaluation mode. 4=Sequence-Runner mode")
         parser.add_option("-e", "--evaluation-metric-mode",
-                          action="store", dest="EVALUATION_METRIC_MODE", default=0, metavar='NUM', type=int,
+                          action="store", dest="EVALUATION_METRIC_MODE", default=8, metavar='NUM', type=int,
                           help="Specify the evaluation metric mode." + \
                                "'-e0' =Default. (-m1) Display best selected LEDs from -e1 result file. (-m2) No action." + \
                                "'-e1' =Use Reflectance Measures. " + \
