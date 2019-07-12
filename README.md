@@ -3,7 +3,7 @@
 ## Computer Science, Aberystwyth University, Wales, UK
 
 
-# WHAT DOES THIS PROGRAM DO?:
+# Key Features:
 
 **Displays, evaluates and tunes LED light positions and intensities for a simulated object inside a Light Stage geodesic dome.** 
 
