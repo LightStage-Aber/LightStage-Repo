@@ -330,6 +330,6 @@ The (`-m1 -e0`) viewing code is still operable, such that first example below wi
 
 **Issues**: If you find any issues, please [file it](https://github.com/LightStage-Aber/LightStage-Repo/issues).
 
-**Slack**: We're fairly responsive on [slack](https://lightstage-uk.slack.com) and you can find us in the #lightstage channel.
+**Slack**: We're fairly responsive on [slack](https://join.slack.com/t/lightstage-uk/shared_invite/enQtNjg2MTQzNDU3MTUzLWYxMWFiYWY2MmY4MzFlODJlNTk4OGNmNzhiMmQ1MzY2MWU4ZmMxNWEzNGJkZDA1MWM1OTg1ZjMwNjg5MjEyNjY) and you can find us in the #lightstage channel.
 
 
