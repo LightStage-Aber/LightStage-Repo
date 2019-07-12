@@ -3,7 +3,7 @@ from numbers import Number
 from collections import namedtuple
 import sys
 
-from options import getPropertiesFile, property_to_boolean
+from options import property_to_boolean, property_to_number
 
 
 class _FindMinimum(namedtuple('FindMinimum', ['value', 'data', 'count', 'rounds'])):
@@ -22,7 +22,7 @@ class IterativeRegression():
 
          [BrightnessControlTuner]
          tune.regression.threshold=0.005 [Range: >=0] - Threshold score to beat before terminating. (Stopping criteria 1)
-         tune.regression.max_improvement_attemps_on_best_score=10 [Range: >=1] - Number of attempts to improve on the current best score before accepting that as the final score. (Stopping criteria 2)
+         tune.regression.max_improvement_attempts_on_best_score=10 [Range: >=1] - Number of attempts to improve on the current best score before accepting that as the final score. (Stopping criteria 2)
          tune.debug=False [In: True or False] - Print progress of search evaluations to STDOUT.
      """
     def __init__(self, evaluator_func, update_func):
@@ -31,9 +31,11 @@ class IterativeRegression():
         self.__set_properties()
 
     def __set_properties(self):
-        dict_properties = getPropertiesFile("../properties/default.properties")
-        self.threshold = float(dict_properties['BrightnessControlTuner']['tune.regression.threshold'])
-        self.max_iterations = int(dict_properties['BrightnessControlTuner']['tune.regression.max_improvement_attemps_on_best_score'])
+        self.threshold = property_to_number(section='BrightnessControlTuner', key='tune.regression.threshold', vmin=None, vmax=None, vtype=float)
+        self.max_iterations = property_to_number(section='BrightnessControlTuner', key='tune.regression.max_improvement_attempts_on_best_score', vmin=None, vmax=None, vtype=int)
+        # dict_properties = getPropertiesFile()
+        # self.threshold = float(dict_properties['BrightnessControlTuner']['tune.regression.threshold'])
+        # self.max_iterations = int(dict_properties['BrightnessControlTuner']['tune.regression.max_improvement_attempts_on_best_score'])
 
         self.DEBUG = property_to_boolean(section="BrightnessControlTuner", key="tune.debug")
 

@@ -11,7 +11,7 @@ currentMillis = lambda: int(round(time.time() * 1000))
 from options import *
 from file_utils import *
 from modes.visualisations import *
-from model_helpers.vector_maths import rotate_triangles
+from model_helpers.vector_maths import rotate_polyfaces
 import modes.luminance.surface_coverage_metric
 from modes.luminance.coverage_datastructure import accumulated_coverage_datastructure
 
@@ -89,7 +89,7 @@ class MeasureReflectanceIntoCameras(EvaluatorGeneric):
                 
                 for rotation_num in range(kwords['TARGET_ROTATIONS']):  
                     if kwords['DO_EVALUATIONS']:
-                        triangles = rotate_triangles(triangles, axis=kwords['TARGET_ROTATION_AXIS'], degrees=kwords['TARGET_ROTATION_DEGREES'])
+                        triangles = rotate_polyfaces(triangles, axis=kwords['TARGET_ROTATION_AXIS'], degrees=kwords['TARGET_ROTATION_DEGREES'])
                     for tri_num in range(len(triangles)):
                         tri = triangles[tri_num]
                         make_triangle_face( tri )
@@ -186,11 +186,12 @@ class MeasureReflectanceIntoCameras(EvaluatorGeneric):
                     log_score.write_to_csv_rows( loggable )
                     log_meta_data.write_to_file_list(string, append_newline=True)
                     #logged_score_to_file = True
-                    print "-------------------"
+                    print("-------------------")
                     for s in string:
-                        print s
-                    print "-------------------"
-                    sys.exit()
+                        print(s)
+                    print("-------------------")
+                    from service import GracefulShutdown
+                    GracefulShutdown.do_shutdown()
             else:
                 led_display_header = "LED "+str(updateable_line.get_index())+" Degrees ReflectRay-to-Cam; Specular Intensity + Diffuse Intensity = Total Intensity"
                 drawTextString.append("-"*len(led_display_header))

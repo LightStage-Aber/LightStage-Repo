@@ -9,7 +9,7 @@ class _Config:
     SKIP_SLOW_ITERATIVE_REGRESSION_TESTS = True
     SKIP_SLOW_SCIPY_BASINHOPPING_TESTS = True
     SKIP_ITERATIVE_REGRESSION_TESTS = False
-    SKIP_SCIPY_BASINHOPPING_TESTS = False
+    SKIP_SCIPY_BASINHOPPING_TESTS = True
 
 
 class Test_IterativeRegression(unittest.TestCase, BrightnessControlTuningTester):

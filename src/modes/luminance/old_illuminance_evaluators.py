@@ -239,7 +239,6 @@ def evaluate_illuminance_score(updateable_line, camerasVertices, triangles, shap
     # best_LEDsq   = [x[0] for x in BEST_LED_DATAq if x[3] == '1']
     # print(best_LEDsq)
     # print(len(best_LEDsq))
-    # sys.exit()
 
     string = []
     drawTextString = []
@@ -257,7 +256,10 @@ def evaluate_illuminance_score(updateable_line, camerasVertices, triangles, shap
     for index in led_sequence[:44]:
         led_set.append(all_leds[index])
     print(stdev_selected_set(triangles, led_set))
-    sys.exit()
+    # ---------------------------------------------------------------
+    from service import GracefulShutdown
+    GracefulShutdown.do_shutdown()
+    # ---------------------------------------------------------------
     startTime = currentMillis()
     if not DO_EVALUATIONS:
         leds                = [updateable_line.get_point()]  # Use reflections from single light selected by arrow-keys.

@@ -43,16 +43,32 @@ def get_incidence_angle( tri, orgin ):
         degrees = math.degrees( radians )
         return radians, degrees
 
+def find_center_of_polyface( polyface ):
+        assert (type(polyface) is list) and len(polyface) >= 3
+        try:
+                t = np.array( polyface )
+        except Exception as e:
+                print(e)
+                raise Exception
+        l = []
+        for i in range(3):
+            x = np.sum(t[:,i])/len(t[:,i])
+            l.append( x )
+        res = tuple(l)
+        assert len(res) == 3
+        return res
 
-def find_center_of_triangle( tri ):        
-        t = np.array(tri)
-        t0 = t[0]
-        t1 = t[1]
-        t2 = t[2]
-        x = (t0[0] + t1[0] + t2[0]) /3
-        y = (t0[1] + t1[1] + t2[1]) /3
-        z = (t0[2] + t1[2] + t2[2]) /3
-        return (x,y,z)
+
+def find_center_of_triangle( tri ):
+        return find_center_of_polyface(tri)
+        # t = np.array(tri)
+        # t0 = t[0]
+        # t1 = t[1]
+        # t2 = t[2]
+        # x = (t0[0] + t1[0] + t2[0]) /3
+        # y = (t0[1] + t1[1] + t2[1]) /3
+        # z = (t0[2] + t1[2] + t2[2]) /3
+        # return (x,y,z)
 
 def get_angle_between_two_lines_3points( c, p1, p2):
         """ Angle between two lines that have a shared point <var> 'c'
@@ -103,20 +119,21 @@ def find_perpendicular_of_triangle( tri ):
         v2 = np.subtract(tri[2], tri[0])
         a = np.cross(v1, v2)
         if len(a) != 3:
-                print "Degenerate_triangle_error"
-                sys.exit(-1)
+                print("Degenerate_triangle_error")
+                from service import GracefulShutdown
+                GracefulShutdown.do_shutdown()
         norm = normalize(a)
         return norm
 
-def rotate_triangles( triangles, axis, degrees ):
-    for i in range(len(triangles)):
-        triangles[i] = rotate_tri( triangles[i] , axis, degrees )
-    return triangles
+def rotate_polyfaces( polyface, axis, degrees ):
+    for i in range(len(polyface)):
+        polyface[i] = rotate_polyface( polyface[i] , axis, degrees )
+    return polyface
     
-def rotate_tri( tri , axis, degrees ):
-    for i in range(len(tri)):
-        tri[i] = rotate_vector( tri[i], axis, degrees )
-    return tri
+def rotate_polyface( polyface , axis, degrees ):
+    for i in range(len(polyface)):
+        polyface[i] = rotate_vector( polyface[i], axis, degrees )
+    return polyface
 
 def rotate_vector( vector, axis, degrees ):
     """ Rotate a vector, on the axis, a given number of degrees. Return the new vector.

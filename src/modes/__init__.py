@@ -6,4 +6,5 @@ from illuminance import *
 from manipulate_results_data import *
 from modes.luminance.luminance import *
 from visualisations import *
+from updateable_line import Updateable_Line
 

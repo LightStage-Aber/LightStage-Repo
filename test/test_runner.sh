@@ -7,6 +7,6 @@
 #       - Run each test class individually, e.g.:
 #           cd tests/
 #           python test_BrightnessControl.py
+# nose2
 
-
-nose2
+python test_runner_sequenced.py

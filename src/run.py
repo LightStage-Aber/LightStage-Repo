@@ -4,7 +4,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import scipy, numpy
 import sys
-
+import logging
 
 __EXPECTED_VERSION__ = '(2, 7)'
 if str(sys.version_info[:2]) != __EXPECTED_VERSION__:
@@ -31,27 +31,30 @@ if str(numpy.__version__) not in EXPECTED_VERSION_NUMPY:
     print("Actual "+str(numpy.__version__))
 
 import tool_managers
-from model_helpers import Updateable_Line
+from data_3d import WaveFront
+from modes import Updateable_Line
 from options import Key_Events, get_parsed_commandline_options
+from service import GracefulKiller, GracefulShutdown
 
 
-class _StateData(object):
+class GL_StateData(object):
         X_AXIS = 20.0
         Y_AXIS = 42.0
         Z_AXIS = 0.0
         do_rotate = True
+        rotate_rate = 0.25
         viewport_depth = -27.0
         default_x = 0
         default_z = 0
         @staticmethod
         def toggle_rotate():
-            _StateData.do_rotate = not _StateData.do_rotate  # toggle
+            GL_StateData.do_rotate = not GL_StateData.do_rotate  # toggle
 
 
 class OpenGLInputHandler:
 
     def __init__(self):
-        self.updateable_line = Updateable_Line(8)
+        # self.updateable_line = None Updateable_Line(8)
         self.keyEvents = Key_Events()
 
         self.lastMouseX, self.lastMouseY = 0, 0
@@ -70,63 +73,63 @@ class OpenGLInputHandler:
 
         s = ""
         if args[0] in [ESCAPE]:
-            sys.exit(0)
+            GracefulShutdown.do_shutdown()
         elif args[0] == SPACE:
-            _StateData.toggle_rotate()
+            GL_StateData.toggle_rotate()
         elif args[0] == 'z':
-            _StateData.default_x += rate
+            GL_StateData.default_x += rate
         elif args[0] == 'x':
-            _StateData.default_x -= rate
+            GL_StateData.default_x -= rate
         elif args[0] in move_viewport:
             if args[0] == GLUT_KEY_UP:
-                if _StateData.viewport_depth <= 0:
-                    _StateData.viewport_depth += rate
+                if GL_StateData.viewport_depth <= 0:
+                    GL_StateData.viewport_depth += rate
                     s = "zoom in"
             elif args[0] == GLUT_KEY_DOWN:
-                _StateData.viewport_depth -= rate
+                GL_StateData.viewport_depth -= rate
                 s = "zoom out"
             elif args[0] == 'e':
-                _StateData.X_AXIS += rate
+                GL_StateData.X_AXIS += rate
                 s = "rotate +X"
             elif args[0] == 'q':
-                _StateData.X_AXIS -= rate
+                GL_StateData.X_AXIS -= rate
                 s = "rotate -X"
             elif args[0] == 'a':
-                _StateData.Y_AXIS += rate
+                GL_StateData.Y_AXIS += rate
                 s = "rotate +Y"
             elif args[0] == 'd':
-                _StateData.Y_AXIS -= rate
+                GL_StateData.Y_AXIS -= rate
                 s = "rotate -Y"
             elif args[0] == 'w':
-                _StateData.Z_AXIS += rate
+                GL_StateData.Z_AXIS += rate
                 s = "rotate +Z"
             elif args[0] == 's':
-                _StateData.Z_AXIS -= rate
+                GL_StateData.Z_AXIS -= rate
                 s = "rotate -Z"
-            print(str((_StateData.X_AXIS, _StateData.Y_AXIS, _StateData.Z_AXIS,
-                       _StateData.viewport_depth)) + " " + s)
-        elif args[0] in update_line:
-            x, y, z = self.updateable_line.get_xyz()
-            # uj, ik, ol
-            if args[0] == 'u':
-                x -= rate * 0.5
-            elif args[0] == 'j':
-                x += rate * 0.5
-            elif args[0] == 'i':
-                y -= rate * 0.5
-            elif args[0] == 'k':
-                y += rate * 0.5
-            elif args[0] == 'y':
-                z -= rate * 0.5
-            elif args[0] == 'h':
-                z += rate * 0.5
-            print(x, y, z)
-            self.updateable_line.set_xyz(x, y, z)
+            print(str((GL_StateData.X_AXIS, GL_StateData.Y_AXIS, GL_StateData.Z_AXIS,
+                       GL_StateData.viewport_depth)) + " " + s)
+        # elif args[0] in update_line:
+        #     x, y, z = self.updateable_line.get_xyz()
+        #     # uj, ik, ol
+        #     if args[0] == 'u':
+        #         x -= rate * 0.5
+        #     elif args[0] == 'j':
+        #         x += rate * 0.5
+        #     elif args[0] == 'i':
+        #         y -= rate * 0.5
+        #     elif args[0] == 'k':
+        #         y += rate * 0.5
+        #     elif args[0] == 'y':
+        #         z -= rate * 0.5
+        #     elif args[0] == 'h':
+        #         z += rate * 0.5
+        #     print(x, y, z)
+        #     self.updateable_line.set_xyz(x, y, z)
 
-        elif args[0] == GLUT_KEY_RIGHT:
-            self.updateable_line.increment()
-        elif args[0] == GLUT_KEY_LEFT:
-            self.updateable_line.decrement()
+        # elif args[0] == GLUT_KEY_RIGHT:
+        #     self.updateable_line.increment()
+        # elif args[0] == GLUT_KEY_LEFT:
+        #     self.updateable_line.decrement()
 
     def drag(self, x, y):
 
@@ -134,17 +137,17 @@ class OpenGLInputHandler:
         if self.left_dragging:
             relativeMoveX = self.lastMouseX-x
             relativeMoveY = self.lastMouseY-y
-            _StateData.Y_AXIS -= (relativeMoveX*0.01)
-            _StateData.X_AXIS -= (relativeMoveY*0.01)
+            GL_StateData.Y_AXIS -= (relativeMoveX*0.01)
+            GL_StateData.X_AXIS -= (relativeMoveY*0.01)
 
         # On right click drag, move the updateable line slowly along the X/Y axis.
         elif self.right_dragging:
             relativeMoveX = self.lastRightMouseX-x
             relativeMoveY = self.lastRightMouseY-y
-            x1,y1,z1 = self.updateable_line.get_xyz()
+            # x1,y1,z1 = self.updateable_line.get_xyz()
             newX = x1+relativeMoveX*0.01
             newY = y1-relativeMoveY*0.01
-            self.updateable_line.set_xyz(newX, newY, z1)
+            # self.updateable_line.set_xyz(newX, newY, z1)
 
     def mouse(self, button, state, x, y):
 
@@ -160,10 +163,10 @@ class OpenGLInputHandler:
             self.lastRightMouseX = x
             self.lastRightMouseY = y
         elif wheelUp:
-            if _StateData.viewport_depth <= 0:
-                _StateData.viewport_depth += 1
+            if GL_StateData.viewport_depth <= 0:
+                GL_StateData.viewport_depth += 1
         elif wheelDown:
-            _StateData.viewport_depth -= 1
+            GL_StateData.viewport_depth -= 1
 
 
 class OpenGLRunner(object):
@@ -184,7 +187,7 @@ class OpenGLRunner(object):
         global GL_LESS, GL_DEPTH_TEST, GL_CULL_FACE, GL_FRONT_AND_BACK, \
             GL_AMBIENT_AND_DIFFUSE, GL_SHININESS, GL_PROJECTION, GL_MODELVIEW, GL_SMOOTH
 
-        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glClearColor(1.0, 1.0, 1.0, 0.0)
         glClearDepth(1.0)
         glDepthFunc(GL_LESS)
         glEnable(GL_DEPTH_TEST),
@@ -210,17 +213,17 @@ class OpenGLRunner(object):
             glMatrixMode(GL_MODELVIEW)
             glLoadIdentity()
 
-            glTranslatef(_StateData.default_x, _StateData.default_z, _StateData.viewport_depth)
-            glRotatef(_StateData.X_AXIS,1.0,0.0,0.0)
-            glRotatef(_StateData.Y_AXIS,0.0,1.0,0.0)
-            glRotatef(_StateData.Z_AXIS,0.0,0.0,1.0)
+            glTranslatef(GL_StateData.default_x, GL_StateData.default_z, GL_StateData.viewport_depth)
+            glRotatef(GL_StateData.X_AXIS,1.0,0.0,0.0)
+            glRotatef(GL_StateData.Y_AXIS,0.0,1.0,0.0)
+            glRotatef(GL_StateData.Z_AXIS,0.0,0.0,1.0)
 
             self.__draw_callback_func()
 
-            if _StateData.do_rotate:
-                    #_StateData.X_AXIS = _StateData.X_AXIS - 0.05
-                    _StateData.Y_AXIS = _StateData.Y_AXIS - 1.0
-                    #_StateData.Z_AXIS = _StateData.Z_AXIS - 0.05
+            if GL_StateData.do_rotate:
+                    #GL_StateData.X_AXIS = GL_StateData.X_AXIS - 0.05
+                    GL_StateData.Y_AXIS = GL_StateData.Y_AXIS - GL_StateData.rotate_rate
+                    #GL_StateData.Z_AXIS = GL_StateData.Z_AXIS - 0.05
 
             glutSwapBuffers()
 
@@ -241,13 +244,20 @@ class OpenGLRunner(object):
                             break
     
     def select_menu(self, choice):
+        global GL_StateData
         def _toggle_rotate():
-            _StateData.toggle_rotate()
+            GL_StateData.toggle_rotate()
+        def _rotate_slower():
+            GL_StateData.rotate_rate = GL_StateData.rotate_rate * 0.5
+        def _rotate_faster():
+            GL_StateData.rotate_rate = GL_StateData.rotate_rate * 2
         def _exit():
-            sys.exit(0)
+            self.begin_shutdown()
         {
             1: _toggle_rotate,
-            2: _exit
+            2: _rotate_slower,
+            3: _rotate_faster,
+            4: _exit
         }[choice]()
         glutPostRedisplay()
         return 0
@@ -268,9 +278,11 @@ class OpenGLRunner(object):
         myfunc = CMPFUNCRAW(self.select_menu)
 
         color_submenu = glutCreateMenu( myfunc )
-        glutAddMenuEntry("Toggle Rotation", 1);
-        glutAddMenuEntry("Quit", 2);
-        glutAttachMenu(GLUT_RIGHT_BUTTON);
+        glutAddMenuEntry("Toggle Rotation", 1)
+        glutAddMenuEntry("Rotate Slower", 2)
+        glutAddMenuEntry("Rotate Faster", 3)
+        glutAddMenuEntry("Exit", 4)
+        glutAttachMenu(GLUT_RIGHT_BUTTON)
 
     def draw(self):
             glutInit()
@@ -279,9 +291,9 @@ class OpenGLRunner(object):
             glutInitWindowPosition(0,5)
             OpenGLRunner.__window = glutCreateWindow(b'LightStage - Target Illumination Score Tool')
             glViewport(0, 0, 500, 500);
+            glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS)
 
             self.right_click_menu()
-
             glutDisplayFunc(self.DrawGLScene)
             glutIdleFunc(self.DrawGLScene)
             glutKeyboardFunc(self.__keyPressed_func)
@@ -290,6 +302,10 @@ class OpenGLRunner(object):
             glutMotionFunc(self.__drag_func)
             self.InitGL(640, 480)
             glutMainLoop()
+            self.begin_shutdown()
+
+    def begin_shutdown(self):
+        GracefulShutdown.do_shutdown()
 
 
     # Define a simple function to create ctypes arrays of floats:
@@ -301,22 +317,24 @@ class OpenGLRunner(object):
 class LightStageApp(object):
 
     def __init__(self):
+        GracefulKiller()
+        WaveFront()
         tool_managers.define_help()
         self.__input_handler = OpenGLInputHandler()
         self.__keyEvents = self.__input_handler.keyEvents
-        self.__updateable_line = self.__input_handler.updateable_line
+        # self.__updateable_line = self.__input_handler.updateable_line
         self.__tool = tool_managers.Tool()
-
+        
     def main(self):
         PARSE_OPTIONS,PARSE_ARGS = get_parsed_commandline_options()
-        do_demo                 = PARSE_OPTIONS.EVALUATION == 1
+        do_demo                 = PARSE_OPTIONS.EVALUATION == 1 or PARSE_OPTIONS.EVALUATION == 4
         do_evaluation_or_tuning = PARSE_OPTIONS.EVALUATION == 2 or PARSE_OPTIONS.EVALUATION == 3
 
         if do_demo:
             run = OpenGLRunner(self.__input_handler, self.__draw_callback)
             run.draw()
         elif do_evaluation_or_tuning:
-            self.__tool.run(self.__updateable_line)
+            self.__tool.run()
         else:
             pass
 
@@ -324,8 +342,9 @@ class LightStageApp(object):
 
         # todo: This is a hack. Rework tool_managers.py to encapsulate keypress (and other) globals into a Config class, then this call should affect that object state.
         tool_managers.update_configs_via_keypress(self.__keyEvents)
-        self.__tool.run( self.__updateable_line )
+        self.__tool.run()
 
 if __name__ == "__main__":
-        x = LightStageApp()
-        x.main()
+    logging.basicConfig(format='%(message)s',level=logging.INFO)
+    x = LightStageApp()
+    x.main()

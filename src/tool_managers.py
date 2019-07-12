@@ -2,11 +2,13 @@ from __future__ import division
 
 
 from options import get_parsed_commandline_options
-from data_3d import *
+from data_3d import WaveFront
+# from data_3d import *
 from modes import *
 from file_utils import *
 from modes.manipulate_results_data import *
 import logging
+from service import GracefulShutdown
 
 
 
@@ -16,8 +18,8 @@ import logging
 PARSE_OPTIONS,PARSE_ARGS = get_parsed_commandline_options()
 
 
-class App():
-    #todo: Refactor the globals in this module into the 'App' class in 'config.py'.
+class App:
+    #@todo: Refactor the globals in this module into the 'App' class in 'config.py'.
     pass
 
 
@@ -96,7 +98,7 @@ def define_help():
     #HELP['n'] = "Toggle target normals"
     HELP['l'] = "Load new score file."
     HELP['+'] = "Increase LEDs selected. (Shading Score only. Unchecked bounds.)"
-    HELP['-'] = "Decrease LEDs selected. (Shading Score only. Unchecked bounds.)"
+    HELP['-'] = "Decrease LEDsdata_3d selected. (Shading Score only. Unchecked bounds.)"
     HELP['ws,ad,qe'] = "Manipulate the viewport XYZ positions (ws, ad, qe), or click-drag with mouse."
     HELP['Up']    = "Zoom in / Wheel-up"
     HELP['Down']  = "Zoom out / Wheel-down"
@@ -213,7 +215,7 @@ class Tool:
         self.tool = ToolSelector(self.scale)
         self.OLD_TOOLS_HERE = OldToolSelector_Untested(self.scale)
 
-    def run( self, updateable_line ):
+    def run( self ):
         # TODO: This is a hack to make running evaluations faster. An ideal implementation will refactor run.py module to separate GL from numerical evaluations.
         if glutGet(GLUT_INIT_STATE) == 1:
             draw_axes(self.scale, 2)
@@ -222,7 +224,7 @@ class Tool:
         tool_selected = self.tool.selector()
 
         if not tool_selected:
-            self.OLD_TOOLS_HERE.selector(updateable_line, self.scale, self.cameras_vertices)
+            self.OLD_TOOLS_HERE.selector(self.scale, self.cameras_vertices)
 
 
 
@@ -233,7 +235,12 @@ class ToolSelector(object):
     warned = False
     def __init__(self, scale):
         self.cached_tool = None
-        self.triangles, self.shape_name = get_target_shape_triangles()
+        # self.triangles, self.shape_name = get_target_shape_triangles()
+        self.triangles, self.shape_name = WaveFront.get_target_shape(
+                                                PARSE_OPTIONS.TARGET_SHAPE, 
+                                                PARSE_OPTIONS.TARGET_SCALE, 
+                                                eval(PARSE_OPTIONS.TARGET_TRANSLATION)
+                                            )
         self.scale = scale
 
     def selector(self):
@@ -242,13 +249,14 @@ class ToolSelector(object):
         shape_name      = self.shape_name
 
         kwords = {
-            'all_leds': draw_dome(self.scale,
-                                  show_points=False,
-                                  show_led_spheres=False,
-                                  show_tris=False,
-                                  show_lines=False,
-                                  get_not_show_tris=False,
-                                  show_selected_leds=None)
+            'all_leds': WaveFront.get_hardcoded_frame(self.scale)
+                        # draw_dome(self.scale,
+                        #           show_points=False,
+                        #           show_led_spheres=False,
+                        #           show_tris=False,
+                        #           show_lines=False,
+                        #           get_not_show_tris=False,
+                        #           show_selected_leds=None)
         }
         # (1) Select Class Reference to Execute: ( See modes/illuminance/illuminance.py classes. )
         if self.cached_tool is None:
@@ -276,6 +284,7 @@ class ToolSelector(object):
                 1: self.cached_tool.display,
                 2: self.cached_tool.evaluate,
                 3: self.cached_tool.tune,
+                4: self.cached_tool.sequence_runner,
             }
             func = switcher.get(PARSE_OPTIONS.EVALUATION, lambda x: None)
 
@@ -286,6 +295,16 @@ class ToolSelector(object):
 
 
 
+
+
+
+
+
+
+
+
+
+
 class OldToolSelector_Untested(ToolSelector):
     """
         Evaluation (-m2) disabled in favour of cleaner code, more modern opengl code and illuminance evaluation methods. 
@@ -293,7 +312,7 @@ class OldToolSelector_Untested(ToolSelector):
         Also see /modes/luminance/luminance.py
     """
     warned = False
-    def selector(self, updateable_line, scale, camerasVertices):
+    def selector(self, scale, camerasVertices):
         global camera_layout
         if not OldToolSelector_Untested.warned:
             print("Warning pre:v0.1.3 mode selected: Check runtime argument -e (--evaluation-metric-mode): " +str(PARSE_OPTIONS.EVALUATION_METRIC_MODE))
@@ -309,7 +328,7 @@ class OldToolSelector_Untested(ToolSelector):
         if PARSE_OPTIONS.EVALUATION_METRIC_MODE == 0:
 
             if do_demo:
-                draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
+                draw_selected_leds( camerasVertices, triangles, shape_name)
             elif do_evaluation:
                 print("No evaluation mode. Try demo mode (i.e. -m1)")
                 pass
@@ -363,24 +382,24 @@ class OldToolSelector_Untested(ToolSelector):
                     'SELECT_BEST_LEDS': SELECT_BEST_LEDS,
                     'PARSE_OPTIONS': PARSE_OPTIONS,
                 }
-                self.cached_tool.evaluate(updateable_line, camerasVertices, triangles, shape_name, camera_layout, kwords)
+                self.cached_tool.evaluate( camerasVertices, triangles, shape_name, camera_layout, kwords)
             elif do_tune:
                 print("No tune mode. Try demo mode (i.e. -m1)")
                 pass
 
         elif PARSE_OPTIONS.EVALUATION_METRIC_MODE == 2:     #EVALUATION_MODE_ILLUMINATION:
-            #evaluate_illuminance_score( updateable_line, camerasVertices, triangles, shape_name )
+            #evaluate_illuminance_score( camerasVertices, triangles, shape_name )
 
             if do_demo:
-                #draw_selected_leds(updateable_line, camerasVertices, triangles, shape_name)
-                #evaluate_illuminance_score(updateable_line, camerasVertices, triangles, shape_name)
+                #draw_selected_leds( camerasVertices, triangles, shape_name)
+                #evaluate_illuminance_score( camerasVertices, triangles, shape_name)
                 print("This evaluation metric mode has been disabled and is marked for refactoring.")
             elif do_evaluation:
                 print("This evaluation metric mode has been disabled and is marked for refactoring.")
             elif do_tune:
                 print("No tune mode. Try demo mode (i.e. -m1)")
                 pass
-            sys.exit()
+            GracefulShutdown.do_shutdown()
 
 
             
@@ -425,7 +444,7 @@ class OldToolSelector_Untested(ToolSelector):
 
 
 
-def draw_selected_leds( updateable_line, camerasVertices, triangles, shape_name ):
+def draw_selected_leds( camerasVertices, triangles, shape_name ):
         best_LEDs   = get_best_leds_from_file()
         score       = get_best_score(best_LEDs)
         leds        = draw_dome( scale , show_selected_leds=best_LEDs )
@@ -464,7 +483,8 @@ def get_target_shape_triangles():
         filename = TARGET_SHAPE if TARGET_SHAPE is not None else filename
         scale = TARGET_SCALE if TARGET_SCALE is not None else dome_scale
         TARGET_SHAPE_NAME = os.path.basename(TARGET_SHAPE) if TARGET_SHAPE is not None else shape_name
-        triangles = obj_model_reader.get_all_object_triangles(filename=filename, scale=scale, translation=TARGET_TRANSLATION)
+        # triangles = obj_model_reader.get_all_object_triangles(filename=filename, scale=scale, translation=TARGET_TRANSLATION)
+        triangles = obj_model_reader.get_all_object_polyfaces( filename, scale, translation=TARGET_TRANSLATION )
         checkShapeValidity( triangles )
         TARGET_TRIANGLES = triangles
     return TARGET_TRIANGLES, TARGET_SHAPE_NAME

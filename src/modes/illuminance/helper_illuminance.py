@@ -36,7 +36,8 @@ def get_surface_evaluations(triangles, leds, intensities=None):
                 assert default_intensity_allowed, ("Replacement of intensity values is disallowed (in the event of invalid intensity data).\n" + 
                     "Set config to light.output_intensity_from_index.allow_default=True. Exiting.\n" + 
                     "Received intensity data: "+str(intensities))
-                import sys; sys.exit()
+                from service import GracefulShutdown
+                GracefulShutdown.do_shutdown()
         else:
             # all is good
             pass
@@ -48,26 +49,26 @@ def get_surface_evaluations(triangles, leds, intensities=None):
     for led_num in range(len(leds)):  # For all n leds:
         led = leds[led_num]
         intensity = intensities[led_num]
-        for tri_num in range(len(triangles)):
-            tri = triangles[tri_num]
-            # make_triangle_face( tri )
-            score = do_surface_evaluation_single_LED(tri, led, intensity)
-            surfaces[tri_num] += score
+        for polyface_num in range(len(triangles)):
+            polyface = triangles[polyface_num]
+            score = do_surface_evaluation_single_LED(polyface, led, intensity)
+            surfaces[polyface_num] += score
 
     return surfaces
 
 
 def do_surface_evaluation_single_LED(tri, led, intensity):
     score = 0.0
-    c = find_center_of_triangle(tri)
+    # c = find_center_of_triangle(tri)
+    c = find_center_of_polyface(tri)
     n1 = find_perpendicular_of_triangle(tri)  # Get normal of current tri plane.
     l, r = reflect_no_rotate(c, led, n1)
     """ usage of l and r require a prior-translate to c.
     """
     if is_front_facing_reflection(tri, l, r):  # Also see: __debug_is_cullable_reflection(tri, OTri, l, r, c )
 
-        draw_incident_ray(c, l)
-        draw_reflection_ray(c, r)
+        # draw_incident_ray(c, l)
+        # draw_reflection_ray(c, r)
         # view = np.subtract(cameraPos, c)    #reposition relative to center of incident surface.
         lamb_diffuse = reflect_models.Lambert_diffuse(incident_vector=l, surface_norm=n1, intensity=intensity)
 
@@ -88,7 +89,7 @@ def get_statistics_on_data(surfaces, all_leds, leds_vertex_set, intensities, eva
     iqrange = iqr(surfaces)
 
     # Metric & More Complex Stats Data 
-    MEAN_INTENSITY = np.mean(intensities) #property_to_number(section="MEAN_INTENSITY", key="MEAN_INTENSITY", vmin=None, vmax=None, vtype=float)
+    MEAN_INTENSITY = np.mean(intensities)
     UNIFORM_LED_INTENSITIES = all([v == MEAN_INTENSITY for v in intensities])
     normalised_stdev_n = float(unnormalised_stdev_set) / len(leds_vertex_set)
     normalised_stdev_n_intensity = float(unnormalised_stdev_set) / len(leds_vertex_set) / MEAN_INTENSITY
@@ -102,15 +103,14 @@ def get_statistics_on_data(surfaces, all_leds, leds_vertex_set, intensities, eva
     obj.TARGET_TRANSLATION
 
     # Frame Data
-    dict_properties = getPropertiesFile("../properties/default.properties")
-    frame_objfilename = dict_properties['FrameModel']['frame.objfilename']
-    frame_scale = float(dict_properties['FrameModel']['frame.scale'])
+    # dict_properties = getPropertiesFile("../properties/default.properties")
+    # frame_objfilename = dict_properties['FrameModel']['frame.objfilename']
+    # frame_scale = float(dict_properties['FrameModel']['frame.scale'])
+    frame_objfilename = property_to_string(section="FrameModel", key="frame.objfilename")
+    frame_scale = property_to_number(section="FrameModel", key="frame.scale", vmin=0, vmax=None, vtype=float)
 
     # LED Index Data
-    led_index = []
-    for index in range(len(all_leds)):
-        if all_leds[index] in leds_vertex_set:
-            led_index.append(index)
+    led_index = get_led_indexes( all_leds, leds_vertex_set )
     
     header_row = ["Qty_Selected_LED_Indexes", "Qty_Available_LED_Indexes", 
                     "total_surface_lambertian_score", "normalised_stdev_n", "normalised_stdev_n_intensity", "MEAN_INTENSITY", "UNIFORM_LED_INTENSITIES", "coefficient_of_stdev", "coefficient_of_iqr_median",
@@ -137,8 +137,27 @@ def get_statistics_on_data(surfaces, all_leds, leds_vertex_set, intensities, eva
                     intensities ]
     return header_row, row
 
+# LED Index Data
+def get_led_indexes( all_leds, leds_vertex_set ):
+    led_index = []
+    for index in range(len(all_leds)):
+        if all_leds[index] in leds_vertex_set:
+            led_index.append(index)
+    return led_index
 
-def write_illumination_result_data_to_file(header_data, row_data, filename_suffix, path_prefix):
+def get_tuned_intensities_data(frame, leds_vertices, intensities, result_dict_data):
+    # LED Index Data
+    led_indexes = get_led_indexes( frame, leds_vertices )
+    
+    #Filename: _Tuned_Evaluator_ClassName_Q_Q_CoV_timestamp.csv
+    filename_suffix = "_Tuned_"+str(result_dict_data["Evaluator_ClassName"])+"_"+str(result_dict_data["Qty_Selected_LED_Indexes"])+"_"+str(result_dict_data["Qty_Available_LED_Indexes"])+"_"+str(result_dict_data["coefficient_of_stdev"])+"_"+str(result_dict_data["timestamp"])
+    header = ["led_indexes","intensities"]
+    row = [ [x,y] for x,y in zip(led_indexes, intensities) ]
+    return header, row, filename_suffix
+
+
+
+def write_illumination_result_data_to_file(header_data, row_data, filename_suffix, path_prefix, RowDataAsRows=False):
     """
     path_prefix: should end in "/". It will be used to make a new directory, if the directory, to which the path_prefix points, does not exist.
     extra_row_data: a list-like object. Appended to the CSV row written to file.
@@ -152,7 +171,7 @@ def write_illumination_result_data_to_file(header_data, row_data, filename_suffi
         print("Header written to: "+str(csv_path)+str(csv_filename))
     
     # Write row data:
-    file_io.write_to_csv(row_data, csv_path, csv_filename)
+    file_io.write_to_csv(row_data, csv_path, csv_filename, asRows=RowDataAsRows)
     print("Data written to: "+str(csv_path)+str(csv_filename))
 
 

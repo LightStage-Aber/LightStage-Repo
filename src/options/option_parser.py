@@ -12,7 +12,7 @@ def get_parsed_commandline_options():
         parser = OptionParser()
         parser.add_option("-m", "--mode",
                           action="store", dest="EVALUATION", default=1, metavar='NUM', type=int,
-                          help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode. 3=Tune-evaluation mode.")
+                          help="Specify the tool mode. 1=Display mode (default). 2=Evaluation mode. 3=Tune-evaluation mode. 4=Sequence-Runner mode")
         parser.add_option("-e", "--evaluation-metric-mode",
                           action="store", dest="EVALUATION_METRIC_MODE", default=0, metavar='NUM', type=int,
                           help="Specify the evaluation metric mode." + \
@@ -49,6 +49,10 @@ def get_parsed_commandline_options():
         parser.add_option("-d", "--display-evaluation-metric",
                           action="store", dest="DISPLAY_EVALUATION_METRIC_OPTION", default=1, metavar='NUM', type=int,
                           help="Specify the evaluation metric display mode from result file. 1=Use Index Column 1 Scores (default). 2=Use Index Column 3 Scores (Lambertian only).")
+        parser.add_option("-f", "--config-properties-filepath",
+                          action="store", dest="CONFIG_PROPERTIES_FILEPATH", default="../properties/default.properties", metavar='PATH', type=str,
+                          help="Specify the configuration properties file loaded on startup. Defaults to: ../properties/default.properties")
+                          
         __CACHED_PARSE_OPTIONS, __CACHED_PARSE_ARGS = parser.parse_args()
 
     return __CACHED_PARSE_OPTIONS, __CACHED_PARSE_ARGS

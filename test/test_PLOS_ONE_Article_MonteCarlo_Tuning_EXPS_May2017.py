@@ -29,8 +29,8 @@ class Test_IterativeRegression(unittest.TestCase, BrightnessControlTuningTester)
         self.assertTrue(actual_std > actual_tuned)
 
     @unittest.skipIf(_Config.SKIP_SLOW_ITERATIVE_REGRESSION_MONTE_CARLO_TESTS, "Skipping Monte Carlo iterative regression test..")
-    def test_brightness_control_MonteCarlo_TweakerCSV__BetterThan_VNoAccControl(self):
-        actual_std, actual_tuned = self._tune_IterativeRegression_SetThreshold(e=3, filename="../results/installed_aos+rod_July2016/tweaker.csv", n=44, indexes_are_important=True, support_access=False, threshold=0.000708533321995)
+    def test_brightness_control_MonteCarlo_TweakerCSV__BetterThan_VAccControl(self):
+        actual_std, actual_tuned = self._tune_IterativeRegression_SetThreshold(e=3, filename="../results/installed_aos+rod_July2016/tweaker.csv", n=44, indexes_are_important=True, support_access=False, threshold=0.00340693210971)
         self.assertTrue(actual_std > actual_tuned)
 
 

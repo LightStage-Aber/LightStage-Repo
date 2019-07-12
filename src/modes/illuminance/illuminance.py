@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import division
-import sys
+import sys, os
+import numpy as np
 
 """
     Illuminance Module:
@@ -12,12 +13,14 @@ currentMillis = lambda: int(round(time.time() * 1000))
 from itertools import chain; flatten_x = lambda x: list(chain.from_iterable(x));
 
 import logging
-logging.basicConfig(format='%(message)s')
 
 from datastructures.orderedset import ListHashableOrderedSet
 from ..evaluator_generic import *
 from .. import distance_measures
 from helper_illuminance import *
+from service import GracefulShutdown
+from options import *
+from data_3d import WaveFront
 
 
 class LoadLEDPositions(object):
@@ -28,19 +31,18 @@ class LoadLEDPositions(object):
         self.leds = self.load_leds_positions()
     """
     def __init__(self):
-        dict_properties         = getPropertiesFile( "../properties/default.properties" )
-        self._source_filename   = dict_properties['LightPositions']['light.objfilename']
-        self._lights_scale      = float(dict_properties['LightPositions']['light.scale'])
-        self._path_prefix       = dict_properties['LightPositions']['light.results_output_file_path_prefix']
+        
+        # dict_properties         = getPropertiesFile( "../properties/default.properties" )
+        # self._source_filename   = dict_properties['LightPositions']['light.objfilename']
+        # self._lights_scale      = float(dict_properties['LightPositions']['light.scale'])
+        # self._path_prefix       = dict_properties['LightPositions']['light.results_output_file_path_prefix']
+        self._source_filename   = property_to_string(section="LightPositions", key="light.objfilename")
+        self._lights_scale      = property_to_number(section="LightPositions", key="light.scale", vmin=None, vmax=None, vtype=float)
+        self._path_prefix       = property_to_string(section="LightPositions", key="light.results_output_file_path_prefix")
         self.shortname          = str(type(self).__name__)
 
     def load_leds_positions(self):
-        # load in frame vertex positions as leds
-        leds = read_vertices_objects( self._source_filename )[0]
-        apply_scale( leds, scale=self._lights_scale )
-        return leds
-
-MEAN_INTENSITY = 0
+        return WaveFront.get_frame(self._source_filename, self._lights_scale)
 
 class LoadLEDOutputIntensities(object):
     """
@@ -60,29 +62,31 @@ class LoadLEDOutputIntensities(object):
     """
     def __init__(self):
         self._source_col_num = property_to_number(section="LightOutput", key="light.output_intensity_from_index.column_number", vmin=0, vmax=99, vtype=int)
+        self._source_skip_header = property_to_boolean(section="LightOutput", key="light.output_intensity_from_index.skip_header")
+        
         self._source_filename = property_to_string(section="LightOutput", key="light.output_intensity_from_index.filename_path")
         
         self._enforce_default = property_to_boolean(section="LightOutput", key="light.output_intensity_from_index.enforce_default")
         self._allow_default = property_to_boolean(section="LightOutput", key="light.output_intensity_from_index.allow_default")
         self._default_value = property_to_number(section="LightOutput", key="light.output_intensity_from_index.default_value", vmin=0.0, vmax=10.0, vtype=float)
 
+
     def load_led_intensities(self, quantity_of_leds):
         l = []
+        logging.debug("Enforce_Default as: "+str(self._enforce_default)+" type: "+str(type(self._enforce_default)))
         if self._enforce_default:
             l = [self._default_value]*quantity_of_leds
+            logging.debug("Intensities from enforced_default")
         else:
             l = self.__load_led_intensities(quantity_of_leds)
-        
-        # l = 5 * np.random.random_sample(quantity_of_leds)
-        #l = #[v-0.5 for v in l]
-        set_once_key_value_pair(section="MEAN_INTENSITY", key="MEAN_INTENSITY", value=np.mean(l))
+            logging.debug("Intensities from file (attempted)")
         return l
 
     def __load_led_intensities(self, quantity_of_leds):
         assert len(self._source_filename) != "", "Empty string for light.output_intensity_from_index.filename_path, cannot load intensities from file."
         assert type(quantity_of_leds) is int and quantity_of_leds > 0, "Entered quantity_of_leds for light.output_intensities is invalid or 0."
 
-        l = read_column(self._source_filename, skip_header=False, column_num=self._source_col_num, quantity=quantity_of_leds)
+        l = read_column(self._source_filename, skip_header=self._source_skip_header, column_num=self._source_col_num, quantity=quantity_of_leds)
 
         def __typecast_intensities(l):
             try:
@@ -96,23 +100,23 @@ class LoadLEDOutputIntensities(object):
             incorrect_quantity_of_intensity_values  = not len(l) == quantity_of_leds
             incorrect_type_of_intensity_value       = not all([type(v) is float for v in l])
             if incorrect_quantity_of_intensity_values:
-                print("Quantity of Light Intensity Values not equal to specified quantity")
+                logging.info("Quantity of Light Intensity Values not equal to specified quantity")
                 
             if incorrect_type_of_intensity_value:
-                print("Validation warning: Light Intensity Value not of type float")
+                logging.info("Validation warning: Light Intensity Value not of type float")
 
             if incorrect_quantity_of_intensity_values or incorrect_type_of_intensity_value:
                 if self._allow_default:
                     has_valid_default_value = type(self._default_value) is float and self._default_value >= 0 and self._default_value <= 10.0
                     if has_valid_default_value:
-                        print("Warning: applying default value for Light Intensity of "+str(self._default_value))
+                        logging.warning("Warning: applying default value for Light Intensity of "+str(self._default_value))
                         l = [self._default_value]*quantity_of_leds
                     else:
-                        print("Invalid default value for Light Intensity of "+str(self._default_value)+" Cannot continue. Exiting.")
-                        import sys; sys.exit()
+                        logging.warning("Invalid default value for Light Intensity of "+str(self._default_value)+" Cannot continue. Exiting.")
+                        GracefulShutdown.do_shutdown()
                 else:
-                    print("Invalid Light Intensity Value data. Cannot continue. Exiting.")
-                    import sys; sys.exit()
+                    logging.warning("Invalid Light Intensity Value data. Cannot continue. Exiting.")
+                    GracefulShutdown.do_shutdown()
             else:
                 # all is good
                 pass
@@ -131,16 +135,19 @@ class LoadLEDIndexes(object):
         self.leds = self.load_leds_indexes()
     """
     def __init__(self):
-        dict_properties         = getPropertiesFile( "../properties/default.properties" )
-        self._source_filename   = dict_properties['LightIndexPositions']['results_file.csvfilename']
-        self._column_number     = int(dict_properties['LightIndexPositions']['results_file.column_number'])
-        self._number_of_leds    = int(dict_properties['LightIndexPositions']['results_file.number_of_leds'])
-        self._path_prefix       = dict_properties['LightIndexPositions']['results_file.results_output_file_path_prefix']
+        # dict_properties         = getPropertiesFile( "../properties/default.properties" )
+        # self._source_filename   = dict_properties['LightIndexPositions']['results_file.csvfilename']
+        # self._column_number     = int(dict_properties['LightIndexPositions']['results_file.column_number'])
+        # self._number_of_leds    = int(dict_properties['LightIndexPositions']['results_file.number_of_leds'])
+        # self._path_prefix       = dict_properties['LightIndexPositions']['results_file.results_output_file_path_prefix']
+
+        self._source_filename   = property_to_string(section="LightIndexPositions", key="results_file.csvfilename")
+        self._column_number     = property_to_number(section="LightIndexPositions", key="results_file.column_number", vmin=0, vmax=None, vtype=int)
+        self._number_of_leds    = property_to_number(section="LightIndexPositions", key="results_file.number_of_leds", vmin=1, vmax=None, vtype=int)
+        self._path_prefix       = property_to_string(section="LightIndexPositions", key="results_file.results_output_file_path_prefix")
         self.shortname = str(type(self).__name__)
 
-        assert (os.path.exists(self._source_filename))
-        assert (self._column_number >= 0)
-        assert (self._number_of_leds > 0)
+        assert (os.path.exists(self._source_filename)), "File specified in: [LightIndexPositions] - results_file.csvfilename does not exist."
 
     @staticmethod
     def get_vertices_from_indexes(indexes, vertices_list):
@@ -149,8 +156,8 @@ class LoadLEDIndexes(object):
                                                   "Maximum index: "+str(max(indexes))+"\n"\
                                                   "Maximum indexable position: "+str(len(vertices_list)-1)+"\n"\
                                                   "Maximum position quantity: "+str(len(vertices_list))+" (for arg: results_file.number_of_leds)"
-        print("LED Indexes Length: "+str(len(indexes)))
-        print("LED Source Vertices Length: "+str(len(vertices_list)))
+        logging.info("LED Indexes Length: "+str(len(indexes)))
+        logging.info("LED Source Vertices Length: "+str(len(vertices_list)))
         for i in indexes:
             if i >= len(vertices_list):
                 logging.warn('Warning: request to select LED by an index value that is outside of the known set. %d / %d' % (i, len(vertices_list)))
@@ -158,8 +165,8 @@ class LoadLEDIndexes(object):
                 v = vertices_list[i]
                 led_vertices.append( v ) if v is not None else None
                 if v is None:
-                    print("None Vertex for LED index: "+str(i))
-        print("LED Final Vertices Length: "+str(len(led_vertices)))
+                    logging.info("None Vertex for LED index: "+str(i))
+        logging.info("LED Final Vertices Length: "+str(len(led_vertices)))
         
         return led_vertices
 
@@ -179,28 +186,32 @@ class LoadFramePositions(object):
     """
     warned_frame_vertexes=False
     def __init__(self, hardcoded_leds=[]):
-        dict_properties = getPropertiesFile("../properties/default.properties")
-        self._frame_objfilename = dict_properties['FrameModel']['frame.objfilename']
-        self._frame_scale = float(dict_properties['FrameModel']['frame.scale'])
+        # dict_properties = getPropertiesFile("../properties/default.properties")
+        # self._frame_objfilename = dict_properties['FrameModel']['frame.objfilename']
+        # self._frame_scale = float(dict_properties['FrameModel']['frame.scale'])
+        # self._with_support_access = eval(dict_properties['FrameModel']['frame.withsupportaccess'])
+        # self._frame_indexes_are_important = eval(dict_properties['FrameModel']['frame.indexes_are_important'])        
+        # assert isinstance(self._with_support_access, bool), "[FrameModel] frame.withsupportaccess must be of type 'bool'. " \
+        #                                               "Found: "+str(type(self._with_support_access))
+        # assert isinstance(self._frame_indexes_are_important, bool), "[FrameModel] frame.indexes_are_important must be of type 'bool'. " \
+        #                                                       "Found: %s" % (str(type(self._frame_indexes_are_important)))
+
+        self._frame_objfilename             = property_to_string(section="FrameModel", key="frame.objfilename")
+        self._frame_scale                   = property_to_number(section="FrameModel", key="frame.scale", vmin=0, vmax=None, vtype=float)
+        self._with_support_access           = property_to_boolean(section='FrameModel', key='frame.withsupportaccess')
+        self._frame_indexes_are_important   = property_to_boolean(section='FrameModel', key='frame.indexes_are_important')
+
         self.__hardcoded_leds = hardcoded_leds
         self.shortname = str(type(self).__name__)
-
-        self._with_support_access = eval(dict_properties['FrameModel']['frame.withsupportaccess'])
-        assert isinstance(self._with_support_access, bool), "[FrameModel] frame.withsupportaccess must be of type 'bool'. " \
-                                                      "Found: "+str(type(self._with_support_access))
-
-        self._frame_indexes_are_important = eval(dict_properties['FrameModel']['frame.indexes_are_important'])
-        assert isinstance(self._frame_indexes_are_important, bool), "[FrameModel] frame.indexes_are_important must be of type 'bool'. " \
-                                                              "Found: %s" % (str(type(self._frame_indexes_are_important)))
     
     def get_frame(self):
         if self._frame_indexes_are_important: # Hardcoded / not
             frame = self.get_hardcoded_frame()
         else:
-            frame = self.__get_frame_from_obj()
+            frame = self.get_file_loaded_frame()
         frame = self.__check_to_apply_support_access(frame)
         if not LoadFramePositions.warned_frame_vertexes:
-            print("Frame has n mounting points available:"+str(len(frame)))
+            logging.info("Frame has n mounting points available:"+str(len(frame)))
             LoadFramePositions.warned_frame_vertexes=True
         return frame
 
@@ -210,14 +221,14 @@ class LoadFramePositions(object):
         return self.__hardcoded_leds
 
     def get_file_loaded_frame(self):
-        return self.__get_frame_from_obj()
+        return WaveFront.get_frame(filename=self._frame_objfilename, scale=self._frame_scale)
 
-    def __get_frame_from_obj(self):
-        # load in frame vertex positions as leds
-        frame = read_vertices_objects(self._frame_objfilename)[0]
-        apply_scale(frame, scale=self._frame_scale)
-        assert len(frame) > 0, "Frame loaded from .obj file %s" % (str(self._frame_objfilename))
-        return frame
+    # def __get_frame_from_obj(self, filename, scale):
+    #     # load in frame vertex positions as leds
+    #     frame = read_vertices_objects(self._frame_objfilename)[0]
+    #     apply_scale(frame, scale=self._frame_scale)
+    #     assert len(frame) > 0, "Frame loaded from .obj file %s" % (str(self._frame_objfilename))
+    #     return frame
 
     def __check_to_apply_support_access(self, frame):
         if self._with_support_access:
@@ -237,8 +248,9 @@ class LoadFramePositions(object):
                 y_axis[lowest_y] = sys.maxint
                 frame[lowest_y]  = None
                 removed.append(lowest_y)
-            
-        print( "Support Access: Number of Remaining Frame vertices: " +str(len(frame)-frame.count(None))+"\tRemoved LED indexes: "+str(removed))
+            logging.info( "Support Access: Number of Remaining Frame vertices: " +str(len(frame)-frame.count(None))+"\tRemoved LED indexes: "+str(removed))
+        else:
+            logging.info( "Support Access: Number of Remaining Frame vertices: " +str(len(frame)-frame.count(None)))            
         return frame
 
 
@@ -267,9 +279,10 @@ class LoadEdgeFramePositions(LoadFramePositions):
     def __get_faces(self):
         # Get edges between vertices, in order to segment each edge into n vertices. We extract this from the tris (faces)
         if self._frame_indexes_are_important:
-            faces = get_dome_faces()                                # Load from hardcoded data.
+            faces = WaveFront.get_hardcoded_frame_faces()  # Load from hardcoded data.
         else:
-            faces = read_faces_objects(self._frame_objfilename)[0]  # Load from file.
+            faces = WaveFront.get_loaded_frame_faces(self._frame_objfilename)  # Load from file.
+            
         return faces
 
     def __get_frame_edge_points(self, frame, faces):
@@ -371,7 +384,7 @@ class LoadEdgeFramePositions(LoadFramePositions):
         return_frame = list(global_vertices)
 
         if not LoadEdgeFramePositions.warned_frame_vertexes:
-            print("Edge-divided Frame has n mounting points available:"+str(len(return_frame)))
+            logging.info("Edge-divided Frame has n mounting points available:"+str(len(return_frame)))
             LoadEdgeFramePositions.warned_frame_vertexes=True
         return return_frame
 
@@ -393,14 +406,16 @@ class RawPositionEvaluator(EvaluatorGeneric, LoadLEDPositions, LoadFramePosition
         self.intensities = self.load_led_intensities( qty )
 
     def display(self, triangles):
-        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
+        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices, self.intensities)
             
     def evaluate( self, triangles ):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
+        EvaluatorGeneric.evaluate(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
-    def tune( self, triangles ):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
+    def tune(self, triangles ):
+        EvaluatorGeneric.tune(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
+    def sequence_runner(self, triangles ):
+        EvaluatorGeneric.sequence_runner(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
 class VertexMappedPositionEvaluator(RawPositionEvaluator):
     """
@@ -486,13 +501,16 @@ class VertexIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadFramePo
         self.intensities = self.load_led_intensities( qty )
 
     def display(self, triangles):
-        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
+        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
     def evaluate(self, triangles):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
+        EvaluatorGeneric.evaluate(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
-    def tune( self, triangles ):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
+    def tune(self, triangles ):
+        EvaluatorGeneric.tune(self, triangles, self.frame, self.leds_vertices, self.intensities)
+
+    def sequence_runner(self, triangles ):
+        EvaluatorGeneric.sequence_runner(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
 class Wrapped_EdgeXIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, LoadEdgeFramePositions, LoadLEDOutputIntensities):
     """
@@ -516,14 +534,16 @@ class Wrapped_EdgeXIndexPositionEvaluator(EvaluatorGeneric, LoadLEDIndexes, Load
         self.intensities = self.load_led_intensities( qty )
 
     def display(self, triangles):
-        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices)
+        EvaluatorGeneric.display(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
     def evaluate(self, triangles):
-        EvaluatorGeneric.evaluate(self, triangles, self.leds_vertices, self.intensities)
+        EvaluatorGeneric.evaluate(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
     def tune(self, triangles):
-        EvaluatorGeneric.tune(self, triangles, self.leds_vertices, self.intensities)
+        EvaluatorGeneric.tune(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
+    def sequence_runner(self, triangles ):
+        EvaluatorGeneric.sequence_runner(self, triangles, self.frame, self.leds_vertices, self.intensities)
 
 
 class EdgeXIndexPositionEvaluator(Wrapped_EdgeXIndexPositionEvaluator):

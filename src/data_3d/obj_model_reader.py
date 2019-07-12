@@ -1,13 +1,15 @@
 import os,sys
 import numpy as np
+import logging
+
 from shape_validator import *
 from model_helpers import vector_maths
+from obj_cache_manager import CachedObjClass, CacheObjManager
 
 class ParseError(Exception): pass;
 class TestFailedError(Exception): pass;
 class FileNotFoundError(Exception): pass;
 
-    
 def get_all_vertex_face_objects( filename ):
     v = read_vertices_objects( filename )
     f = read_faces_objects( filename )
@@ -39,8 +41,8 @@ def get_all_object_triangles( filename, scale , translation=(0,0,0)):
         faces    += faceObjs[obj]
     max_vertex_index = max([max(x) for x in faces])
     if len(vertices) != max_vertex_index:
-        print( "ParseWarning: A face's vertex index number is does not match the quantity of read vertices." )
-        print( "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index) )
+        logging.warning( "ParseWarning: A face's vertex index number is does not match the quantity of read vertices." )
+        logging.warning( "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index) )
 
     # Parse as Tris:
     for obj in range(len(vertexObjs)):
@@ -55,7 +57,7 @@ def get_all_object_triangles( filename, scale , translation=(0,0,0)):
                     # Get the face[i] vertex
                     v = vertices[i-1]
                 except IndexError as indErr:
-                    print("IndexError: Attempted to access index: "+str(i-1)+" in list of length: "+str(len(vertices)))
+                    logging.warning("IndexError: Attempted to access index: "+str(i-1)+" in list of length: "+str(len(vertices)))
                     raise IndexError
                 # Scale the face[i] vertex
                 scV = [v[0]*scale, v[1]*scale, v[2]*scale]
@@ -98,8 +100,8 @@ def get_all_object_polyfaces( filename, scale, translation=(0,0,0) ):
         faces    += faceObjs[obj]
     max_vertex_index = max([max(x) for x in faces])
     if len(vertices) != max_vertex_index:
-        print( "ParseWarning: A face's vertex index number is does not match the quantity of read vertices." )
-        print( "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index) )
+        logging.warning( "ParseWarning: A face's vertex index number is does not match the quantity of read vertices." )
+        logging.warning( "Qty of Vertices: "+str(len(vertices))+", Largest Face Index: "+str(max_vertex_index) )
 
     # Parse as:
     for obj in range(len(vertexObjs)):
@@ -113,7 +115,7 @@ def get_all_object_polyfaces( filename, scale, translation=(0,0,0) ):
                         # Get the face[i] vertex
                         v = vertices[i-1]
                     except IndexError as indErr:
-                        print("IndexError: Attempted to access index: "+str(i-1)+" in list of length: "+str(len(vertices)))
+                        logging.warning("IndexError: Attempted to access index: "+str(i-1)+" in list of length: "+str(len(vertices)))
                         raise IndexError
                     # Scale the face[i] vertex
                     scV = [v[0]*scale, v[1]*scale, v[2]*scale]
@@ -158,74 +160,88 @@ def get_triangle_centers( triangles ):
         tris.append( vector_maths.find_center_of_triangle( tri ) )
     return tris
 
-def read_vertices_objects(filename):    
+def read_vertices_objects(filename):
     object_vertices = []
-    prev_line = "#"
-    if os.path.exists(filename):
-        with open(filename, 'rb') as f:
-            for line in f:
-                line        = line.strip()
-                line        = list(line.split())                   # split to list
-                is_valid_data_block         = len(line) > 0
-                if is_valid_data_block:
-                    cmd      = line[0]
-                    values   = line[1:]                           # get only values
-                    prev_cmd = prev_line[0] if len(prev_line) > 0 else "#"
-                    is_first_vertex         = (cmd == 'v' and prev_cmd != "v")
-                    is_subsequent_vertex    = (cmd == 'v' and prev_cmd == "v")
-                    is_final_vertex         = (cmd != 'v' and prev_cmd == "v")
-                    if is_first_vertex:
-                        object_vertices.append([])
-                    if is_first_vertex or is_subsequent_vertex:
-                        values   = [float(x) for x in values]   # cast from string to float
-                        object_vertices[len(object_vertices)-1].append( values )
-                prev_line = line
+    if filename in CacheObjManager().cached_vertices.keys():
+        # Return the already cached vertices.
+        object_vertices = CacheObjManager().cached_vertices.value(key=filename)
     else:
-        raise FileNotFoundError("Obj file not found: "+str(filename))
+        # Attempt to load vertices from file and cache them:
+        logging.info("Attempt load of vertices from file path: "+str(filename))
+        if os.path.exists(filename):
+            prev_line = "#"
+            with open(filename, 'rb') as f:
+                for line in f:
+                    line        = line.strip()
+                    line        = list(line.split())                   # split to list
+                    is_valid_data_block         = len(line) > 0
+                    if is_valid_data_block:
+                        cmd      = line[0]
+                        values   = line[1:]                           # get only values
+                        prev_cmd = prev_line[0] if len(prev_line) > 0 else "#"
+                        is_first_vertex         = (cmd == 'v' and prev_cmd != "v")
+                        is_subsequent_vertex    = (cmd == 'v' and prev_cmd == "v")
+                        is_final_vertex         = (cmd != 'v' and prev_cmd == "v")
+                        if is_first_vertex:
+                            object_vertices.append([])
+                        if is_first_vertex or is_subsequent_vertex:
+                            values   = [float(x) for x in values]   # cast from string to float
+                            object_vertices[len(object_vertices)-1].append( values )
+                    prev_line = line
+            CacheObjManager().cached_vertices.set_once( key=filename, value=object_vertices)
+        else:
+            raise FileNotFoundError("Obj file not found: "+str(filename))
     return object_vertices
 
 def read_faces_objects( filename ):
     object_faces = []
-    prev_line = "#"
-    if os.path.exists(filename):
-        with open(filename, 'rb') as f:
-            count = -1
-            for line in f:
-                count +=1
-                line = line.strip()
-                is_valid_data_block         = len(line) > 0
-                if is_valid_data_block:
-                    cmd      = line[0]
-                    prev_cmd = prev_line[0] if len(prev_line) > 0 else "#"
-                    is_first_face         = (cmd == 'f' and prev_cmd != "f")
-                    is_subsequent_face    = (cmd == 'f' and prev_cmd == "f")
-                    is_final_face         = (cmd != 'f' and prev_cmd == "f")
-                    if is_first_face:
-                        object_faces.append([])
-                    if is_first_face or is_subsequent_face:
-                        line = line.replace("-","")             # remove negative index values.
-                        line = line.replace("-","")             # remove negative index values.
-                        values   = list(line.split())           # split to list, " " space-char separated.
-                        values   = values[1:]                   # get only values
-                        for x in values:
-                            # OBJ Format does not enforce a single format for face definitions. Where 'a/b/c' exists, meaning below can be derived. Numbers indicate indexes.
-                            # Formatting note: f  -1 -2 -3          -- 'position vertex/texture coordinate/normal vertex' - negative vertex index, for no good reason (AFAIK!)
-                            # Formatting note: f  1//4 2//4 3//4    -- 'position vertex/texture coordinate/normal vertex' - Face of 1,2,3 vertices with normal-vertex 4.
-                            # Formatting note: f  1 2 3             -- 'position vertex/texture coordinate/normal vertex' - implied points of triangle.
-                            # Formatting note: f  1 2 3 4           -- 'position vertex/texture coordinate/normal vertex' - implied points of polygon.
-                            x = x.split("/")
-                            if len(x) < 1:
-                                print("An .obj file face entry exists without a position-vertex point, expected format: 'position-vertex/texture-coordinate/normal-vertex'")
-                                print("Line "+str(count)+":\n"+str(line))
-                                raise ValueError
-                        # Get only the first 'position-vertex' index
-                        values   = [int(x.split("/")[0]) for x in values]     # cast from string to int (index)
-                        object_faces[len(object_faces)-1].append( values )
-                    if is_final_face:
-                        pass
-                prev_line = line
+    if filename in CacheObjManager().cached_faces.keys():
+        # Return the already cached faces.
+        object_faces = CacheObjManager().cached_faces.value(key=filename)
     else:
-        raise FileNotFoundError("Obj file not found: "+str(filename))
+        # Attempt to load faces from file and cache them:
+        logging.info("Attempt load of faces from file path: "+str(filename))
+        if os.path.exists(filename):
+            prev_line = "#"
+            with open(filename, 'rb') as f:
+                count = -1
+                for line in f:
+                    count +=1
+                    line = line.strip()
+                    is_valid_data_block         = len(line) > 0
+                    if is_valid_data_block:
+                        cmd      = line[0]
+                        prev_cmd = prev_line[0] if len(prev_line) > 0 else "#"
+                        is_first_face         = (cmd == 'f' and prev_cmd != "f")
+                        is_subsequent_face    = (cmd == 'f' and prev_cmd == "f")
+                        is_final_face         = (cmd != 'f' and prev_cmd == "f")
+                        if is_first_face:
+                            object_faces.append([])
+                        if is_first_face or is_subsequent_face:
+                            line = line.replace("-","")             # remove negative index values.
+                            line = line.replace("-","")             # remove negative index values.
+                            values   = list(line.split())           # split to list, " " space-char separated.
+                            values   = values[1:]                   # get only values
+                            for x in values:
+                                # OBJ Format does not enforce a single format for face definitions. Where 'a/b/c' exists, meaning below can be derived. Numbers indicate indexes.
+                                # Formatting note: f  -1 -2 -3          -- 'position vertex/texture coordinate/normal vertex' - negative vertex index, for no good reason (AFAIK!)
+                                # Formatting note: f  1//4 2//4 3//4    -- 'position vertex/texture coordinate/normal vertex' - Face of 1,2,3 vertices with normal-vertex 4.
+                                # Formatting note: f  1 2 3             -- 'position vertex/texture coordinate/normal vertex' - implied points of triangle.
+                                # Formatting note: f  1 2 3 4           -- 'position vertex/texture coordinate/normal vertex' - implied points of polygon.
+                                x = x.split("/")
+                                if len(x) < 1:
+                                    logging.warning("An .obj file face entry exists without a position-vertex point, expected format: 'position-vertex/texture-coordinate/normal-vertex'")
+                                    logging.warning("Line "+str(count)+":\n"+str(line))
+                                    raise ValueError
+                            # Get only the first 'position-vertex' index
+                            values   = [int(x.split("/")[0]) for x in values]     # cast from string to int (index)
+                            object_faces[len(object_faces)-1].append( values )
+                        if is_final_face:
+                            pass
+                    prev_line = line
+            CacheObjManager().cached_faces.set_once( key=filename, value=object_faces)
+        else:
+            raise FileNotFoundError("Obj file not found: "+str(filename))
     return object_faces
 
 

@@ -22,6 +22,8 @@ Feel free to check out the YouTube videos including [this one](https://www.youtu
     PyOpenGL
     numpy
     scipy
+    Docker (for hardware in loop feature)
+    
 
 Downloading the [Anaconda distribution](https://www.anaconda.com/distribution/) should be sufficient, except for `Python wrapper for OpenGL`. The following methods have been successful for earlier users:
 
@@ -223,14 +225,17 @@ Switch back to experiment mode with:
 Display example showing an Edge 3 dome visualisation  |
 -------------------|
 * Created an with `Edge 3` configuration set-up in `properties/default.properties` 
-* Run as `python run.py -m1 -e4`|
-![Demo mode](https://buildalightstage.files.wordpress.com/2019/05/myimage-1.gif)|
+* Run as `python run.py -m1 -e4`
 
 
+<img src="https://buildalightstage.files.wordpress.com/2019/05/myimage-1.gif" width="500" height="380">
 
-# Brightness Control Tuning `(-m3)`
 
-Given a set of light positions, the illumination balance can often be improved by fine tuning the balance of intensity (lumens output or power) emitted by each LED light. This feature, enabled by mode `-m3`, provides two strategies to improve the `evenness` balance of a set of LEDs.
+# Optimise Evenness of any Light Position Set: `(-m3)`
+
+Given a set of light positions, the illumination balance can often be improved by fine tuning the balance of intensity (lumens output or power) emitted by each LED light. In other words, this feature is to find a way to lower the standard deviation of the distribution (evaluation data) by effecting the inputs into the scoring function.
+
+In the current release you can enable this feature with mode `-m3`. Two strategies to improve the `evenness` balance of a set of LEDs are provided.
 
 ### Optimisation Types:
 
@@ -257,11 +262,20 @@ Then, run as:
 
 * The intensity values can inform the power output per light in a physical light stage control system. It is advisable to scaling these values into a [0.0 to 1.0] range, then translate into physical light's control's power (i.e. wattage) range (e.g. [0 to 256]).
 
-* The improved **light output intensities** set is written into the `light_intensities` column, writen to the output `Results_Illuminance_*.csv` file.
+* The improved **light output intensities** set (`intensities` column) and corresponding LED index positions (column `led_indexes`) are written to a unique output file with identifying suffix information:
+
+    * Filename format: `Results_Illuminance__Tuned__QtySet_QtyAvail_Evaluator_ClassName_CoVScore_timestamp.csv`.
+    * This file path can be used directly as input to the `light.output_intensity_from_index.filename_path=` property. Set `column_number=1` and `skip_header=True`.
+
+
+* The rest of the result statistics data (including the improved **light output intensities** set in the `light_intensities` column) is written to the `Results_Illuminance_*.csv` file.
 
 #### Recommendations and Reading:
+
 1. Recommend to start with `iterative regression`, which has been *beta* tested. For sub-optimal position sets, this algorithm can rapidly improve scores. For already optimised positions, this can perform poorly.
+
 2. Read the algorithms (`./src/modes/brightness_control_tuning/`), documentations (e.g. scipy / pydocs) and configuration file settings for more details.
+
 3. Read and run the unit tests and their configuration changes in `./test/test_BrightnessControl.py` with nose2 or by executing the py file.
 
 
@@ -281,9 +295,10 @@ Then, run as:
     /src            - Code.
     /test           - Unit tests for src/ code.
     /models         - Sample 3D obj model files.
-    /results        - Example scoring result data files for various experiment types and example input .csv/.obj files.
-    /properties     - Configuration file to simplify running of experiments; in particular with command line options: -e3 through to -e9.
-    /exp            - Experiment scripts (for batched and single trials), i.e. for charged particle repulsion position testing (inc. functions to re-write config file)
+    /results        - Example result data files for various experiment types and example input .csv/.obj files.
+    /properties     - Configuration file to simplify running of experiments, visualisations, etc. (-f 'path/file.properties')
+    /exp            - Experiment scripts for batch and single trials. Includes charged particle repulsion positioning (Lettvin) and range testing for evaluating metrics.
+    /vendor	    - Third party content, including docker container scripts and dependency support scripts.
 
 
 
@@ -311,6 +326,10 @@ The (`-m1 -e0`) viewing code is still operable, such that first example below wi
 
 
 
+## Community
 
-### See Changelog for more detailed usage and information, including options switches and historical changes.
+**Issues**: If you find any issues, please [file it](https://github.com/LightStage-Aber/LightStage-Repo/issues).
+
+**Slack**: We're fairly responsive on [slack](https://lightstage-uk.slack.com) and you can find us in the #lightstage channel.
+
 

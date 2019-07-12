@@ -1,18 +1,29 @@
 import os.path
 import ConfigParser
 import sys
+from option_parser import get_parsed_commandline_options
+
+
+
+"""
+    --------------------------------------------------------------------------------------------------------------
+
+    --- Public interface functions:
+
+    --------------------------------------------------------------------------------------------------------------
+"""
 
 
 def property_to_boolean(section, key):
     k, v = __get_key_value_pair(section, key)
     assert (v in ["True", "False", True, False]), \
         "The "+str(k)+" value must be either 'True' or 'False': " + str(v) + ". Type: " + str(type(v))
-    return True if v == "True" else False
+    return True if v == "True" or v == True else False
 
 
 def property_to_string(section, key):
     k, v = __get_key_value_pair(section, key)
-    assert v is not None, \
+    assert v is not None and type(v) is str, \
         "The "+str(k)+" value must not be None: " + str(v) + ". Type: " + str(type(v))
     return v
 
@@ -58,24 +69,39 @@ def property_to_number(section, key, vmin=None, vmax=None, vtype=int):
     return v
 
 
-class FileNotFoundError(Exception):
-    pass
 
+
+
+"""
+    --------------------------------------------------------------------------------------------------------------
+
+    --- Private / Hidden functions follow:
+
+    --------------------------------------------------------------------------------------------------------------
+"""
 
 __CACHED_properties_dict = {}
 
+def _reset_cache():
+    """
+        For resetting during unit tests.
+    """
+    global __CACHED_properties_dict
+    __CACHED_properties_dict = {}
 
-def getPropertiesFile( path_to_file="../properties/default.properties" ):
+def getPropertiesFile():
     """
     @deprecated in favour of wrapper property_* functions for specific types.
     """
-    return __getPropertiesFile( path_to_file )
+    return __getPropertiesFile()
 
 
-def __getPropertiesFile( path_to_file="../properties/default.properties" ):
+def __getPropertiesFile():
     global __CACHED_properties_dict
+    Options, Args = get_parsed_commandline_options()
+    path_to_file = Options.CONFIG_PROPERTIES_FILEPATH or "../properties/default.properties"
     if path_to_file not in __CACHED_properties_dict:
-        __CACHED_properties_dict[path_to_file] = read_properties_from_file(path_to_file)
+        __CACHED_properties_dict[path_to_file] = __read_properties_from_file(path_to_file)
     return __CACHED_properties_dict[path_to_file]
 
 def __get_key_value_pair(section, key):
@@ -97,11 +123,9 @@ def set_once_key_value_pair(section, key, value):
         d[section] = {}
         d[section][key] = value
 
-def read_properties_from_file(path_to_file="../properties/default.properties"):
-    """
-    @deprecated in favour of wrapper property_* functions for specific types.
-    """
-    return __read_properties_from_file(path_to_file)
+
+class FileNotFoundError(Exception):
+    pass
 
 def __read_properties_from_file(path_to_file="../properties/default.properties"):
     config = ConfigParser.RawConfigParser()
@@ -117,13 +141,13 @@ def __read_properties_from_file(path_to_file="../properties/default.properties")
 
 
 if __name__ == "__main__":
-    print getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.objfilename']
-    #print getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.translation']
-    print getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.scale']
+    # print( getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.objfilename'] )
+    #print( getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.translation'] )
+    # print( getPropertiesFile( "../../properties/default.properties" )['FrameModel']['frame.scale'] )
 
-    print property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.niter', vmin=0, vmax=None, vtype=int)  # 100
-    print property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.niter_success', vmin=0, vmax=10, vtype=int)  # 1
-    print property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.lower_bounds', vmin=0.0, vmax=2.0, vtype=float)  # 0.5
-    print property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.upper_bounds', vmin=0.0, vmax=2.0, vtype=float)  # 1.5
-    print property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.tc', vmin=0.0, vmax=2.0, vtype=float)  # 1.0
-    print property_to_boolean(section='BrightnessControlTuner', key='tune.scipy.basinhopping.disp')
+    print( property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.niter', vmin=0, vmax=None, vtype=int) ) # 100)
+    print( property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.niter_success', vmin=0, vmax=10, vtype=int) ) # 1
+    print( property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.lower_bounds', vmin=0.0, vmax=2.0, vtype=float) ) # 0.5
+    print( property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.upper_bounds', vmin=0.0, vmax=2.0, vtype=float) ) # 1.5
+    print( property_to_number(section='BrightnessControlTuner', key='tune.scipy.basinhopping.tc', vmin=0.0, vmax=2.0, vtype=float) ) # 1.0
+    print( property_to_boolean(section='BrightnessControlTuner', key='tune.scipy.basinhopping.disp') )
