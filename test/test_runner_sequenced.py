@@ -9,6 +9,7 @@ from test_PLOS_ONE_Article_Control_MC_EXPS_May2017 import PLOSOneEXP_Controls, P
 from test_PLOS_ONE_Article_MonteCarlo_Tuning_EXPS_May2017 import Test_IterativeRegression
 from test_model_objects import Test_DomeModel
 from test_BrightnessControl import Test_IterativeRegression, Test_SciPyBasinHopping
+from sequences_test import Test_BaseBaseGradientSequence, Test_GradientSequence_IntervalSpecified
 
 
 
@@ -52,3 +53,6 @@ if __name__ == "__main__":
     # unittest.TextTestRunner(verbosity=3).run(suite7)
     unittest.TextTestRunner(verbosity=3).run(suite99)
 
+    # Lighting Sequence tests:
+    suite8 = unittest.TestLoader().loadTestsFromModule( sys.modules["sequences_test.test_spherical_gradient"] )
+    unittest.TextTestRunner(verbosity=3).run(suite8)
