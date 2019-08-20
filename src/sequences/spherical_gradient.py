@@ -28,15 +28,22 @@ class BaseGradientSequence:
     """
         The basic sequence generator uses individual lights as intervals. 
             - This causes a quantity of sequence lighting steps equal to number of lights, which has a very specific and lengthy use case.
+
+        Public methods:
+            get_next_sequence()
+            get_sequence_number()
+            __init__()
     """
 
-    def __init__(self, leds_vertices, intensity_baselines, scaled_range=[0.5, 1.0]):
+    def __init__(self, leds_vertices, intensity_baselines, axis="x", scaled_range=[0.5, 1.0]):
         self.leds_vertices = leds_vertices
         self.intensity_baselines = intensity_baselines
         self.from_value = scaled_range[1] #1.0
         self.to_value = scaled_range[0] #0.5
+        self.axis = ord(axis)-120 if axis in ["x","y","z"] else None # Default to assertion failure.
         self.loop_number = 0
         self.sequence_counter = 0
+        assert self.axis in [0,1,2], "`Axis` argument must be specified as either \"x\", \"y\" or \"z\"."
         assert self.leds_vertices is not None and self.intensity_baselines is not None, "Requires led vertex and corresponding intensity data in a sequence data type."
         assert len(self.intensity_baselines) == len(self.leds_vertices), "The quantities of LED vertices and Intensity Baselines should be identical."
         assert self.from_value > self.to_value, "From value (e.g. 1.0) should be larger than To value (e.g. 0.5)." 
@@ -45,7 +52,7 @@ class BaseGradientSequence:
     def __initialise(self):
         self.dequeue_Ls = []
         self.__collect()
-        self.__order_by_Xaxis()
+        self.__order_by_axis()
         self.dequeue_Ls = deque(self.dequeue_Ls)
         return self.dequeue_Ls
 
@@ -54,11 +61,11 @@ class BaseGradientSequence:
             for i in range(len(self.leds_vertices)):
                 vertex = self.leds_vertices[i]
                 intensity = self.intensity_baselines[i]
-                c = BaseSequenceContainer( vertex, vertex[0], i, intensity )
+                c = BaseSequenceContainer( vertex, vertex[self.axis], i, intensity )
                 self.dequeue_Ls.append( c ) 
         return self.dequeue_Ls
 
-    def __order_by_Xaxis(self):
+    def __order_by_axis(self):
         self.dequeue_Ls.sort( key=lambda c: c.x_value )
 
     def __apply_gradient(self):
@@ -107,13 +114,23 @@ class GradientSequence_IntervalSpecified(BaseGradientSequence):
     """
         The Interval Specified Sequence Generator uses specified quantity of intervals lighting steps, proportionally illuminated based on X-axis position. 
             - The quantity of sequence lighting steps is specified by user.
+
+        Public methods:
+            get_next_sequence()
+            get_sequence_number()
+            __init__()
     """
 
-    def __init__(self, leds_vertices, intensity_baselines, scaled_range=[0.5, 1.0], quantity_of_intervals=10):
-        BaseGradientSequence.__init__(self, leds_vertices, intensity_baselines, scaled_range)
+    def __init__(self, leds_vertices, intensity_baselines,  axis="x", scaled_range=[0.5, 1.0], quantity_of_intervals=10):
+        BaseGradientSequence.__init__(self, leds_vertices, intensity_baselines, axis, scaled_range)
         self.quantity_of_intervals = quantity_of_intervals
-
-        assert self.quantity_of_intervals > 0 and self.quantity_of_intervals <= len(leds_vertices), "Quantity intervals must be GT 0 and LTEQ quantity of lights."
+        assert leds_vertices is not None and isinstance(leds_vertices, list) and len(leds_vertices) > 0, "Sequence LED vertices must be valid, list type and quantity GT 0."
+        assert intensity_baselines is not None and isinstance(intensity_baselines, list) and len(intensity_baselines) > 0, "Sequence LED intensities must be valid, list type and quantity GT 0."
+        assert self.quantity_of_intervals > 0, "Quantity intervals ({}) must be GT 0.".format(self.quantity_of_intervals)
+        assert self.quantity_of_intervals <= len(leds_vertices), "Quantity intervals ({},({})) must be LTEQ quantity of lights ({},({})), result is {}.".format(
+                                                                                    self.quantity_of_intervals, type(self.quantity_of_intervals),
+                                                                                    len(leds_vertices), type(len(leds_vertices)),
+                                                                                    (self.quantity_of_intervals <= len(leds_vertices)))
 
     
 

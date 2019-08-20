@@ -7,8 +7,11 @@
 """
 import cherrypy
 from service import LSWebService
+import logging
 
 if __name__ == '__main__':
+    
+    logging.basicConfig(format='%(message)s',level=logging.INFO)
     config = {'server.socket_host': 'localhost'}
     cherrypy.config.update(config)
     cherrypy.quickstart(LSWebService())

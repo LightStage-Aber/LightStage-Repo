@@ -3,6 +3,8 @@ import json
 from options import getPropertiesFile, get_parsed_commandline_options
 from db_access import DBADO
 
+
+
 class BaselineDataService(DBADO):
     
     def __init__(self, *args, **kwords):
@@ -45,4 +47,5 @@ class ConfigurationDataService(DBADO):
             ])
         d,o,a = json.loads( _d ), json.loads( _o ), json.loads( _a )
         return d,o,a
+
 

@@ -11,6 +11,6 @@ cd $CurrDir/redis/Simple
 docker build -t $REDIS_CONTAINER_NAME .
 docker run --name $REDIS_CONTAINER_NAME -d $REDIS_CONTAINER_NAME
 
-#REDIS_IP=$("docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $REDIS_CONTAINER_NAME")
-#nc -v $REDIS_IP $REDIS_PORT
+REDIS_IP=$("docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $REDIS_CONTAINER_NAME")
+nc -v $REDIS_IP $REDIS_PORT
 

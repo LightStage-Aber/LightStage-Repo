@@ -3,9 +3,10 @@ import backoff
 from docker_connector import ConnectToDocker
 
 
-from registered_shutdown import GracefulShutdown
+from registered_shutdown import GracefulShutdown, RegisteredShutdown
 
 class ABC_NOSQL_DB:
+    debug = True
     def get_connection(self):
         pass
     def get_series(self, key_list):
@@ -16,6 +17,9 @@ class ABC_NOSQL_DB:
         pass
     def set(self, key, value):
         pass
+    def report_set_key(self, k,v):
+        if ABC_NOSQL_DB.debug:
+            print("Redis: "+str(k)+" = "+str(v))
 
 
 class RedisDB(ABC_NOSQL_DB):
@@ -56,7 +60,8 @@ class RedisDB(ABC_NOSQL_DB):
         pipe = conn.pipeline()
         for k in key_list:
             pipe.get(k)
-        res = pipe.execute() 
+        res = pipe.execute()
+        self.report_set_key(res,"")
         return res
   
     @backoff.on_exception(backoff.fibo,
@@ -73,6 +78,7 @@ class RedisDB(ABC_NOSQL_DB):
         pipe = conn.pipeline()
         d = zip_data.items() if type(zip_data) is dict else zip_data # if dict, return as [(k,v),..] pairs, else assume is already kv pairs.
         for k,v in d:
+            self.report_set_key(k,v)
             pipe.set(k, v)
         return pipe.execute()
 
@@ -84,7 +90,9 @@ class RedisDB(ABC_NOSQL_DB):
             Get Wrapper
         """
         conn = self.get_connection()
-        return conn.get(key)
+        v = conn.get(key)
+        self.report_set_key(key,v)
+        return v
     
     @backoff.on_exception(backoff.fibo,
                       redis.exceptions.ConnectionError,
@@ -94,6 +102,7 @@ class RedisDB(ABC_NOSQL_DB):
             Set Wrapper
         """
         conn = self.get_connection()
+        self.report_set_key(key,value)
         return conn.set(key, value)
 
     @backoff.on_exception(backoff.fibo,
@@ -119,3 +128,46 @@ class RedisDBOnDocker(RedisDB):
 class DBADO(RedisDBOnDocker):
     def __init__(self, *args, **kwords):        
         RedisDBOnDocker.__init__(self, *args, **kwords)
+
+class DBADO_ThreadedPubSub(RedisDBOnDocker, RegisteredShutdown):
+    """
+        Class wrapper to execute threaded pubsub messaging via redis.
+    """
+    def __init__(self, *args, **kwords):        
+        RedisDBOnDocker.__init__(self, *args, **kwords)
+        self._thread = None
+        self._pubsub = None
+        GracefulShutdown.register( self ) 
+    
+    @backoff.on_exception(backoff.fibo,
+                      redis.exceptions.ConnectionError,
+                      max_time=10)
+    def subscribe(self, key, callback_func):
+        """
+            Subscribe Wrapper, with callback function run in own thread.
+            Thread shutdown, via GracefulShutdown.register(self) in init().
+        """
+        r = self.get_connection()
+        self._pubsub = r.pubsub()
+        self._pubsub.subscribe( **{key:callback_func} )
+        self._thread = self._pubsub.run_in_thread(sleep_time=0.1)
+    
+    @backoff.on_exception(backoff.fibo,
+                      redis.exceptions.ConnectionError,
+                      max_time=10)
+    def publish(self, key, message):
+        """
+            Publish Wrapper
+        """
+        conn = self.get_connection()
+        return conn.publish( key, message)
+        
+    def shutdown(self):
+        try:
+            self._pubsub.close()
+        except Exception as e:
+            pass
+        try:
+            self._thread.stop()
+        except Exception as e:
+            pass

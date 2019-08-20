@@ -4,6 +4,7 @@ from __future__ import division
 from OpenGL.GL import GL_FRONT, GL_AMBIENT_AND_DIFFUSE, GL_SPECULAR, GL_SHININESS, glMaterialfv, glMaterialf
 
 import numpy as np
+import copy
 import time;     currentMillis = lambda: int(round(time.time() * 1000))
 from illuminance.helper_illuminance import get_led_indexes, get_surface_evaluations, are_all_surfaces_hit, get_statistics_on_data, get_tuned_intensities_data, \
                                             write_illumination_result_data_to_file, write_led_set_lambertian_scores_appended_result_file
@@ -12,7 +13,7 @@ from brightness_control_tuning.tuning_selector import BrightnessControlStrategy,
 
 from options import *
 from service import WebServiceProcessForker, WebBrowserProcessForker, DataServiceDockerManager, \
-    BaselineDataService, ConfigurationDataService
+    BaselineDataService, ConfigurationDataService, DataService_Server_SphericalGradient
 
 class EvaluatorGeneric:
     """
@@ -95,6 +96,8 @@ class EvaluatorGeneric:
             baseline_ds.set_default_intensities( published_intensity_set )
             config_ds = ConfigurationDataService()
             config_ds.set_config_data()
+            sequence_ds = DataService_Server_SphericalGradient(copy.deepcopy(leds_vertices), copy.deepcopy(led_indexes), copy.deepcopy(intensities))
+            sequence_ds.subscribe_to_service()
 
         if not EvaluatorGeneric._init_web_service:
             self.ws = WebServiceProcessForker()
@@ -109,6 +112,18 @@ class EvaluatorGeneric:
         
 
 
+
+
+
+
+
+
+
+
+
+
+
+        
 
     
     """ ===============================================================================================================================

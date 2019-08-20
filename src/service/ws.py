@@ -17,6 +17,16 @@ class LSWebService(object):
         return json.dumps(output)
 
     @cherrypy.expose
+    def spherical_gradient(self, axis="x", num_rotations=1, current_rotation=-1):
+        res = self.processor.get_spherical_gradient_rotation( 
+            axis, num_rotations, current_rotation
+         )
+        if res is None:
+            raise cherrypy.HTTPError(404)
+        else:
+            return json.dumps( res )
+
+    @cherrypy.expose
     def baseline_intensities(self):
         return self.processor.get_baseline_intensities()
 
@@ -34,4 +44,6 @@ class LSWebService(object):
                 '<li><a href="/status">'+str("status")+'</a></li>'+\
                 '<li><a href="/config">'+str("config")+'</a></li>'+\
                 '<li><a href="/baseline_intensities">'+str("baseline_intensities")+'</a></li>'+\
+                '<li><a href="/spherical_gradient?axis=x&num_rotations=5&current_rotation=1">'+str("spherical_gradient")+'</a></li>'+\
                 '</ul>'
+                

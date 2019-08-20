@@ -45,6 +45,15 @@ class Test_BaselineDataService(unittest.TestCase):
         conn.flushdb()
 
 
+class Test_DBADO_ThreadedPubSub(unittest.TestCase):
+    
+    def __init__(self, *args, **kwords):
+        unittest.TestCase.__init__(self, *args, **kwords)
+        self.dataservice = DataService_SphericalGradient(ip=None, port=6379, db=9)
+
+    
+
+
 if __name__ == "__main__":
 
     suite = unittest.TestLoader().loadTestsFromModule( sys.modules[__name__] )

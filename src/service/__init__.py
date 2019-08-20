@@ -6,3 +6,4 @@ from ws import LSWebService
 
 from registered_shutdown import RegisteredShutdown, GracefulShutdown, GracefulKiller
 from db_service import BaselineDataService, ConfigurationDataService
+from db_lighting_sequence_service import DataService_Client_SphericalGradient, DataService_Server_SphericalGradient
