@@ -345,6 +345,6 @@ class LightStageApp(object):
         self.__tool.run()
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(message)s',level=logging.INFO)
+    logging.basicConfig(format='%(message)s',level=logging.WARNING)
     x = LightStageApp()
     x.main()

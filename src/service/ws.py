@@ -44,6 +44,6 @@ class LSWebService(object):
                 '<li><a href="/status">'+str("status")+'</a></li>'+\
                 '<li><a href="/config">'+str("config")+'</a></li>'+\
                 '<li><a href="/baseline_intensities">'+str("baseline_intensities")+'</a></li>'+\
-                '<li><a href="/spherical_gradient?axis=x&num_rotations=5&current_rotation=1">'+str("spherical_gradient")+'</a></li>'+\
+                '<li><a href="/spherical_gradient?axis=x&num_rotations=5&current_rotation=0">'+str("spherical_gradient")+'</a></li>'+\
                 '</ul>'
                 

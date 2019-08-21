@@ -1,4 +1,4 @@
-import redis
+import redis, logging
 import backoff
 from docker_connector import ConnectToDocker
 
@@ -6,7 +6,6 @@ from docker_connector import ConnectToDocker
 from registered_shutdown import GracefulShutdown, RegisteredShutdown
 
 class ABC_NOSQL_DB:
-    debug = True
     def get_connection(self):
         pass
     def get_series(self, key_list):
@@ -18,8 +17,7 @@ class ABC_NOSQL_DB:
     def set(self, key, value):
         pass
     def report_set_key(self, k,v):
-        if ABC_NOSQL_DB.debug:
-            print("Redis: "+str(k)+" = "+str(v))
+        logging.debug("Redis: {} = {}".format(k, v))
 
 
 class RedisDB(ABC_NOSQL_DB):
@@ -137,7 +135,7 @@ class DBADO_ThreadedPubSub(RedisDBOnDocker, RegisteredShutdown):
         RedisDBOnDocker.__init__(self, *args, **kwords)
         self._thread = None
         self._pubsub = None
-        GracefulShutdown.register( self ) 
+        GracefulShutdown.register( self, nice=-5 ) 
     
     @backoff.on_exception(backoff.fibo,
                       redis.exceptions.ConnectionError,
@@ -164,10 +162,14 @@ class DBADO_ThreadedPubSub(RedisDBOnDocker, RegisteredShutdown):
         
     def shutdown(self):
         try:
-            self._pubsub.close()
-        except Exception as e:
-            pass
-        try:
             self._thread.stop()
+            logging.debug("subscription thread stop() called. Waiting for join.")
+            self._thread.join()
+            logging.debug("subscription thread terminated and joined.")
         except Exception as e:
-            pass
+            logging.warning("subscription thread failed during stop() or join().")
+        try:
+            self._pubsub.close()
+            logging.debug("subscription redis.pubsub channel closed.")
+        except Exception as e:
+            logging.warning("subscription redis.pubsub channel failed during close().")

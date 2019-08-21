@@ -1,20 +1,33 @@
-import sys
+import sys, logging
 import signal
 
 class GracefulShutdown:
     _register = []
     
+    class ServiceContainer:
+        def __init__(self, inst, nice):
+            self.nice = nice
+            self.instance = inst
+
+
     @staticmethod
-    def register(instance):
+    def register(instance, nice=0):
         """
+            Arguments:
+            `instance` argument should be an Object of type `RegisteredShutdown`.
+            `nice` parameter permits a natural ascending priority-basis for shutdown execution order. Default is 0 (int), no range limitations.
+            
             Usage: - subprocess.Popen() object containers, should 
                         - extend RegisteredShutdown and override shutdown() and 
-                        - register to this method, as follows: 
+                        - register to this method, as follows:
                 from service import GracefulShutdown
-                GracefulShutdown.register( self ) 
+                GracefulShutdown.register( self ) # For regular execution shutdown order.
+                or 
+                GracefulShutdown.register( self, nice=-1 ) # For earlier execution shutdown order.
         """
         if isinstance(instance, RegisteredShutdown): # is of base type: RegisteredShutdown
-            GracefulShutdown._register.append( instance )
+            container = GracefulShutdown.ServiceContainer(instance, nice)
+            GracefulShutdown._register.append( container )
         else:
             raise TypeError("Registered objects for graceful shutdown MUST be of type `RegisteredShutdown`.")
     
@@ -25,8 +38,13 @@ class GracefulShutdown:
                 from service import GracefulShutdown
                 GracefulShutdown.do_shutdown()
         """
-        print("Shutting down")
-        for job in GracefulShutdown._register:
+        logging.info("Shutting down services:")
+        GracefulShutdown._register.sort( key=lambda x: x.nice )
+        qty = len(GracefulShutdown._register)
+        for i in range(qty):
+            container = GracefulShutdown._register[i]
+            job = container.instance
+            logging.info("{}/{}. [{}] - {}".format((i+1), qty, container.nice, job.__class__.__name__))
             job.shutdown()
         sys.exit()
 
