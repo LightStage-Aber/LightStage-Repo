@@ -181,7 +181,7 @@ This section of configuration let's us define a set of light intensities, either
     light.output_intensity_from_index.column_number=4
     light.output_intensity_from_index.filename_path=../results/Control_91-92_March2017/edges_l3926.csv
 
-* **Non-uniform light intensities** can improve target lighting balance, see the **Brightness Control Tuning** section for the automated improvement procedure.
+* **Non-uniform light intensities** can improve target lighting balance, see the **Brightness Control Tuning** section for the automated improvement procedure. However, non-uniform light intensities will effect photometric calucations.
 
 * **Uniform light intensities** have no effect on balance peformance.
 
